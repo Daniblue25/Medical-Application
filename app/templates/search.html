@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Research Platform - DRCI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% extends 'base.html' %}
+
+    {% block title %}Accueil | Medical Research Platform{% endblock %}
+
+    {% block content %}
+    <div class="homepage-container">
+      <!-- Hero Section -->
+      <section class="hero text-center text-white py-5" style="background: url('/static/images/hero-bg.jpg') center/cover no-repeat;">
+        <h1 class="display-4 fw-bold">Medical Research Platform</h1>
+        <p class="lead">Votre assistant d’analyse de la littérature médicale</p>
+      </section>
+
+      <!-- Search Section -->
+      <section id="search-section" class="search-section py-5">
+        <div class="container">
+          <form id="searchForm" action="{{ url_for('main.results_page') }}" method="get" class="row g-3 justify-content-center">
+            <div class="col-md-3">
+              <select id="domain" name="domain" class="form-select" required>
+                <option value="">Domaine médical...</option>
+                {% for d in domains %}
+                <option value="{{ d.value }}">{{ d.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select id="studyType" name="studyType" class="form-select">
+                <option value="">Type d'étude...</option>
+                {% for s in study_types %}
+                <option value="{{ s.value }}">{{ s.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select id="period" name="period" class="form-select" required>
+                <option value="2">2 ans</option>
+                <option value="5">5 ans</option>
+                <option value="10" selected>10 ans</option>
+                <option value="15">15 ans</option>
+                <option value="20">20 ans</option>
+                <option value="30">30 ans</option>
+                <option value="50">50 ans</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <input type="text" id="keywords" name="keywords" class="form-control" placeholder="Mots-clés (optionnel)">
+            </div>
+            <div class="col-md-1 d-grid">
+              <button type="submit" class="btn btn-primary">Rechercher</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section class="features-section py-5 bg-light">
+        <div class="container">
+          <div class="row g-4">
+            <!-- Extraction de données -->
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                  <h5 class="card-title">📄 Extraction de données</h5>
+                  <ul class="list-unstyled">
+                    <li>Titre avec mots-clés mis en évidence</li>
+                    <li>Auteurs complets</li>
+                    <li>Journal et date de publication</li>
+                    <li>Résumé avec highlighting</li>
+                    <li>PMID, DOI et liens directs</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <!-- Analyse intelligente -->
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                  <h5 class="card-title">🎯 Analyse intelligente</h5>
+                  <ul class="list-unstyled">
+                    <li>Critères de jugement principaux (CJP)</li>
+                    <li>Tailles d'échantillons</li>
+                    <li>Types d'études</li>
+                    <li>Tendances temporelles</li>
+                    <li>Résumés automatiques</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <!-- Validation des données -->
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                  <h5 class="card-title">✅ Validation des données</h5>
+                  <ul class="list-unstyled">
+                    <li>Contrôle automatisé</li>
+                    <li>Échantillon aléatoire</li>
+                    <li>Vérification manuelle</li>
+                    <li>Garantie de fiabilité</li>
+                    <li>Export des résultats</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+<!-- Page-specific scripts -->
+{% endblock %}

@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+
+{% block title %}Accueil | Medical Research Platform{% endblock %}
+
+{% block content %}
+<div class="homepage-container">
+  <!-- Hero Section -->
+  <section class="hero text-center text-white py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container">
+      <h1 class="display-4 fw-bold mb-4">Medical Research Platform</h1>
+      <p class="lead mb-4">Votre assistant d'analyse de la littérature médicale PubMed</p>
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card shadow-lg border-0">
+            <div class="card-body p-4">
+              <form id="searchForm" action="{{ url_for('main.results_page') }}" method="get" class="row g-3">
+                <div class="col-md-6">
+                  <label for="domain" class="form-label text-muted">Domaine médical *</label>
+                  <select id="domain" name="domain" class="form-select form-select-lg" required>
+                    <option value="">Choisir un domaine...</option>
+                    {% for d in domains %}
+                    <option value="{{ d.value }}">{{ d.label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="studyType" class="form-label text-muted">Type d'étude</label>
+                  <select id="studyType" name="studyType" class="form-select form-select-lg">
+                    <option value="">Tous les types...</option>
+                    {% for s in study_types %}
+                    <option value="{{ s.value }}">{{ s.label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="period" class="form-label text-muted">Période *</label>
+                  <select id="period" name="period" class="form-select form-select-lg" required>
+                    <option value="2">2 dernières années</option>
+                    <option value="5">5 dernières années</option>
+                    <option value="10" selected>10 dernières années</option>
+                    <option value="15">15 dernières années</option>
+                    <option value="20">20 dernières années</option>
+                    <option value="30">30 dernières années</option>
+                    <option value="50">50 dernières années</option>
+                  </select>
+                </div>
+                <div class="col-md-8">
+                  <label for="keywords" class="form-label text-muted">Mots-clés (optionnel)</label>
+                  <input type="text" id="keywords" name="keywords" class="form-control form-control-lg" 
+                         placeholder="Ex: diabetes, treatment, randomized trial...">
+                </div>
+                <div class="col-12 d-grid">
+                  <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search me-2"></i>Lancer la recherche
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section py-5 bg-light">
+    <div class="container">
+      <div class="row text-center mb-5">
+        <div class="col">
+          <h2 class="display-5 fw-bold text-primary">Fonctionnalités avancées</h2>
+          <p class="lead text-muted">Analyse intelligente et automatisée de la littérature médicale</p>
+        </div>
+      </div>
+      
+      <div class="row g-4">
+        <!-- Extraction de données -->
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center p-4">
+              <div class="mb-3">
+                <i class="fas fa-file-medical-alt fa-3x text-primary"></i>
+              </div>
+              <h5 class="card-title">Extraction de données</h5>
+              <ul class="list-unstyled text-muted">
+                <li class="mb-2">✓ Titre avec liens PubMed</li>
+                <li class="mb-2">✓ Auteurs complets</li>
+                <li class="mb-2">✓ Journal et date</li>
+                <li class="mb-2">✓ Résumé automatique</li>
+                <li class="mb-2">✓ PMID, DOI et liens</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Analyse intelligente -->
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center p-4">
+              <div class="mb-3">
+                <i class="fas fa-brain fa-3x text-success"></i>
+              </div>
+              <h5 class="card-title">Analyse intelligente</h5>
+              <ul class="list-unstyled text-muted">
+                <li class="mb-2">✓ Critères de jugement principaux</li>
+                <li class="mb-2">✓ Tailles d'échantillons</li>
+                <li class="mb-2">✓ Types d'études</li>
+                <li class="mb-2">✓ Mots-clés automatiques</li>
+                <li class="mb-2">✓ Tendances temporelles</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Export et validation -->
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center p-4">
+              <div class="mb-3">
+                <i class="fas fa-check-circle fa-3x text-warning"></i>
+              </div>
+              <h5 class="card-title">Export et validation</h5>
+              <ul class="list-unstyled text-muted">
+                <li class="mb-2">✓ Export CSV, JSON, PDF</li>
+                <li class="mb-2">✓ Score de validation</li>
+                <li class="mb-2">✓ Contrôle qualité</li>
+                <li class="mb-2">✓ Pagination intelligente</li>
+                <li class="mb-2">✓ Analyse statistique</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Statistics Section -->
+  <section class="stats-section py-5">
+    <div class="container">
+      <div class="row text-center">
+        <div class="col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">25+</div>
+            <div class="stat-label">Domaines médicaux</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">15+</div>
+            <div class="stat-label">Types d'études</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">200</div>
+            <div class="stat-label">Articles par recherche</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item">
+            <div class="stat-number">50</div>
+            <div class="stat-label">Années de couverture</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Test Section -->
+  <section class="test-section py-3 bg-light">
+    <div class="container text-center">
+      <p class="mb-2">
+        <a href="{{ url_for('main.test_pubmed') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-flask me-1"></i>Tester la connexion PubMed
+        </a>
+      </p>
+      <small class="text-muted">Vérifiez que l'API PubMed est accessible</small>
+    </div>
+  </section>
+</div>
+
+<style>
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+  z-index: 1;
+}
+
+.hero .container {
+  position: relative;
+  z-index: 2;
+}
+
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.stat-item {
+  padding: 2rem 1rem;
+}
+
+.stat-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #0d6efd;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-top: 0.5rem;
+}
+
+.form-select-lg, .form-control-lg {
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.form-select-lg:focus, .form-control-lg:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, #0d6efd, #0056b3);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 30px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(13, 110, 253, 0.4);
+}
+
+.features-section .card {
+  border-radius: 15px;
+  transition: all 0.3s ease;
+}
+
+.features-section .card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.fa-3x {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 3rem 0;
+  }
+  
+  .display-4 {
+    font-size: 2.5rem;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+}
+</style>
+{% endblock %}

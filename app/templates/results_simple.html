@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+
+{% block title %}Résultats de recherche{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row">
+    <div class="col-md-8">
+      <h2 class="mb-4">
+        Résultats pour 
+        {% if domain %}{{ domain }}{% else %}Tous domaines{% endif %} 
+        sur {{ period }} ans
+        {% if keywords %}, mots-clés : « {{ keywords }} »{% endif %}
+      </h2>
+
+      {% if error_message %}
+        <div class="alert alert-warning mb-4">
+          <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Problème de recherche</h4>
+          <p>{{ error_message }}</p>
+          {% if debug_info and debug_info.query %}
+            <hr>
+            <details>
+              <summary>Informations de débogage</summary>
+              <p class="mb-0"><strong>Requête PubMed :</strong> <code>{{ debug_info.query }}</code></p>
+            </details>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if articles %}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <p class="text-muted mb-0">
+            Affichage {{ (current_page - 1) * 20 + 1 }} - {{ ((current_page - 1) * 20 + articles|length) }} 
+            sur {{ total_articles }} articles
+          </p>
+          
+          <div class="btn-group" role="group">
+            <a href="{{ url_for('main.export_csv', keywords=keywords, domain=domain, studyType=study_type, period=period) }}" 
+               class="btn btn-outline-success btn-sm">
+              <i class="fas fa-file-csv"></i> CSV
+            </a>
+            <a href="{{ url_for('main.export_json', keywords=keywords, domain=domain, studyType=study_type, period=period) }}" 
+               class="btn btn-outline-info btn-sm">
+              <i class="fas fa-file-code"></i> JSON
+            </a>
+            <a href="{{ url_for('main.export_pdf', keywords=keywords, domain=domain, studyType=study_type, period=period) }}" 
+               class="btn btn-outline-danger btn-sm">
+              <i class="fas fa-file-pdf"></i> PDF
+            </a>
+          </div>
+        </div>
+        
+        {% for art in articles %}
+          <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+              <h3 class="card-title">
+                <a href="{{ art.url }}" target="_blank" class="text-decoration-none">
+                  {{ art.title }}
+                </a>
+              </h3>
+              
+              <div class="row mb-3">
+                <div class="col-md-8">
+                  <p class="card-subtitle mb-2 text-muted">
+                    <strong>Auteurs :</strong> {{ art.authors | join(', ') }}
+                  </p>
+                  <p class="mb-2">
+                    <strong>Journal :</strong> {{ art.journal }} ({{ art.year }})
+                  </p>
+                </div>
+                <div class="col-md-4">
+                  <div class="small text-muted">
+                    <div><strong>Type :</strong> {{ art.study_type }}</div>
+                    {% if art.sample_size %}
+                      <div><strong>Échantillon :</strong> {{ art.sample_size }} participants</div>
+                    {% endif %}
+                    {% if art.primary_outcome != 'Non identifié' %}
+                      <div><strong>Critère principal :</strong> {{ art.primary_outcome }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              
+              <p class="mb-3">
+                <strong>Résumé :</strong> {{ art.summary }}
+              </p>
+              
+              {% if art.keywords %}
+                <p class="mb-3">
+                  <strong>Mots-clés :</strong>
+                  {% for tag in art.keywords %}
+                    <span class="badge bg-secondary me-1">{{ tag }}</span>
+                  {% endfor %}
+                </p>
+              {% endif %}
+              
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <a href="{{ art.url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-external-link-alt"></i> Voir sur PubMed
+                  </a>
+                  {% if art.doi %}
+                    <a href="https://doi.org/{{ art.doi }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                      <i class="fas fa-link"></i> DOI
+                    </a>
+                  {% endif %}
+                </div>
+                <small class="text-muted">PMID: {{ art.pmid }}</small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+          <nav aria-label="Navigation des résultats">
+            <ul class="pagination justify-content-center">
+              {% if has_prev %}
+                <li class="page-item">
+                  <a class="page-link" href="{{ url_for('main.results_page', keywords=keywords, domain=domain, studyType=study_type, period=period, page=current_page-1) }}">
+                    Précédent
+                  </a>
+                </li>
+              {% endif %}
+              
+              {% for page_num in range(1, total_pages + 1) %}
+                {% if page_num == current_page %}
+                  <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                  </li>
+                {% elif page_num <= 3 or page_num > total_pages - 3 or (page_num >= current_page - 1 and page_num <= current_page + 1) %}
+                  <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.results_page', keywords=keywords, domain=domain, studyType=study_type, period=period, page=page_num) }}">
+                      {{ page_num }}
+                    </a>
+                  </li>
+                {% elif page_num == 4 and current_page > 5 %}
+                  <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                  </li>
+                {% elif page_num == total_pages - 3 and current_page < total_pages - 4 %}
+                  <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="{{ url_for('main.results_page', keywords=keywords, domain=domain, studyType=study_type, period=period, page=current_page+1) }}">
+                    Suivant
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-warning">
+          <h4>Aucun article trouvé</h4>
+          <p>Essayez avec des paramètres différents ou des mots-clés moins spécifiques.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Panneau d'analyse à droite -->
+    <div class="col-md-4">
+      <!-- Nouvelle recherche -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-search"></i> Nouvelle recherche
+          </h6>
+        </div>
+        <div class="card-body">
+          <form action="{{ url_for('main.results_page') }}" method="get" class="row g-2">
+            <div class="col-12">
+              <select name="domain" class="form-select form-select-sm" required>
+                <option value="">Domaine médical...</option>
+                {% for d in domains %}
+                <option value="{{ d.value }}" {% if d.value == domain %}selected{% endif %}>{{ d.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <select name="studyType" class="form-select form-select-sm">
+                <option value="">Type d'étude...</option>
+                {% for s in study_types %}
+                <option value="{{ s.value }}" {% if s.value == study_type %}selected{% endif %}>{{ s.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <select name="period" class="form-select form-select-sm" required>
+                <option value="2" {% if period == '2' %}selected{% endif %}>2 ans</option>
+                <option value="5" {% if period == '5' %}selected{% endif %}>5 ans</option>
+                <option value="10" {% if period == '10' %}selected{% endif %}>10 ans</option>
+                <option value="15" {% if period == '15' %}selected{% endif %}>15 ans</option>
+                <option value="20" {% if period == '20' %}selected{% endif %}>20 ans</option>
+                <option value="30" {% if period == '30' %}selected{% endif %}>30 ans</option>
+                <option value="50" {% if period == '50' %}selected{% endif %}>50 ans</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <input type="text" name="keywords" class="form-control form-control-sm" 
+                     placeholder="Mots-clés (optionnel)" value="{{ keywords or '' }}">
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary btn-sm w-100">
+                <i class="fas fa-search"></i> Rechercher
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card sticky-top">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-chart-line"></i> Analyse des résultats
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if analysis %}
+            <!-- Statistiques générales -->
+            <div class="mb-4">
+              <h6 class="text-primary">Statistiques générales</h6>
+              <div class="row text-center">
+                <div class="col-6">
+                  <div class="border rounded p-2">
+                    <div class="h4 mb-0 text-success">{{ analysis.total_articles }}</div>
+                    <small class="text-muted">Articles</small>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="border rounded p-2">
+                    <div class="h4 mb-0 text-info">{{ "%.1f"|format(analysis.validation_score) }}%</div>
+                    <small class="text-muted">Score validation</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extraction des données -->
+            <div class="mb-4">
+              <h6 class="text-primary">
+                <i class="fas fa-database"></i> Extraction des données
+              </h6>
+              <div class="small">
+                <div class="d-flex justify-content-between">
+                  <span>Articles avec résumés:</span>
+                  <span class="badge bg-success">{{ analysis.with_abstracts }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Critères identifiés:</span>
+                  <span class="badge bg-info">{{ analysis.with_primary_outcomes }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Tailles d'échantillon:</span>
+                  <span class="badge bg-warning">{{ analysis.with_sample_sizes }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Mots-clés extraits:</span>
+                  <span class="badge bg-primary">{{ analysis.total_articles }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Analyse intelligente -->
+            <div class="mb-4">
+              <h6 class="text-primary">
+                <i class="fas fa-brain"></i> Analyse intelligente
+              </h6>
+              <div class="small">
+                {% if analysis.avg_sample_size %}
+                  <div class="d-flex justify-content-between">
+                    <span>Taille moyenne:</span>
+                    <span class="badge bg-primary">{{ "%.0f"|format(analysis.avg_sample_size) }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Total participants:</span>
+                    <span class="badge bg-secondary">{{ analysis.total_sample_size }}</span>
+                  </div>
+                {% endif %}
+                <div class="d-flex justify-content-between">
+                  <span>Domaines couverts:</span>
+                  <span class="badge bg-info">{{ analysis.total_articles }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Période analysée:</span>
+                  <span class="badge bg-warning">{{ analysis.total_years or period }} ans</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Types d'études -->
+            {% if analysis.study_types %}
+              <div class="mb-4">
+                <h6 class="text-primary">Types d'études</h6>
+                {% for study_type, count in analysis.study_types.items() %}
+                  <div class="d-flex justify-content-between small">
+                    <span>{{ study_type[:20] }}{% if study_type|length > 20 %}...{% endif %}</span>
+                    <span class="badge bg-light text-dark">{{ count }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <!-- Journaux principaux -->
+            {% if analysis.journals %}
+              <div class="mb-4">
+                <h6 class="text-primary">Journaux principaux</h6>
+                {% for journal, count in analysis.journals.items() %}
+                  {% if loop.index <= 5 %}
+                    <div class="d-flex justify-content-between small">
+                      <span>{{ journal[:20] }}{% if journal|length > 20 %}...{% endif %}</span>
+                      <span class="badge bg-light text-dark">{{ count }}</span>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <!-- Tendances temporelles -->
+            {% if analysis.year_counts %}
+              <div class="mb-4">
+                <h6 class="text-primary">Tendances temporelles</h6>
+                <div class="small">
+                  <div class="d-flex justify-content-between">
+                    <span>Tendance:</span>
+                    <span class="badge bg-info">{{ analysis.trend|title }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Années couvertes:</span>
+                    <span class="badge bg-secondary">{{ analysis.total_years }}</span>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            <!-- Validation -->
+            <div class="mb-3">
+              <h6 class="text-primary">
+                <i class="fas fa-check-circle"></i> Validation des données
+              </h6>
+              <div class="small mb-2">
+                <div class="d-flex justify-content-between">
+                  <span>Complétude:</span>
+                  <span class="badge bg-success">{{ "%.1f"|format(analysis.validation_score) }}%</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Fiabilité:</span>
+                  <span class="badge bg-info">
+                    {% if analysis.validation_score >= 80 %}Élevée{% elif analysis.validation_score >= 60 %}Moyenne{% else %}Faible{% endif %}
+                  </span>
+                </div>
+              </div>
+              <div class="progress" style="height: 20px;">
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: {{ analysis.validation_score }}%"
+                     aria-valuenow="{{ analysis.validation_score }}" 
+                     aria-valuemin="0" aria-valuemax="100">
+                  {{ "%.1f"|format(analysis.validation_score) }}%
+                </div>
+              </div>
+              <small class="text-muted">Basée sur la complétude des métadonnées</small>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mt-4">
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Nouvelle recherche
+    </a>
+  </div>
+</div>
+
+<style>
+.sticky-top {
+  top: 20px;
+}
+
+.card-title a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.card-title a:hover {
+  color: #0a58ca;
+  text-decoration: underline;
+}
+
+.badge {
+  font-size: 0.75em;
+}
+
+.progress-bar {
+  background-color: #198754;
+}
+
+.form-select-sm, .form-control-sm {
+  font-size: 0.875rem;
+}
+
+.card-header h6 {
+  color: #495057;
+  font-weight: 600;
+}
+
+.text-primary {
+  color: #0d6efd !important;
+}
+
+.pagination .page-link {
+  color: #0d6efd;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.btn-group .btn {
+  border-radius: 0.375rem;
+  margin-right: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffecb5;
+  color: #664d03;
+}
+
+@media (max-width: 768px) {
+  .sticky-top {
+    position: relative !important;
+    top: 0 !important;
+  }
+  
+  .col-md-4 {
+    margin-top: 2rem;
+  }
+}
+</style>
+{% endblock %}
