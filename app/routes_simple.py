@@ -19,6 +19,46 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 
+# Configuration du cache pour améliorer les performances
+from datetime import datetime, timedelta
+import hashlib
+import json
+import os
+
+# Cache simple en mémoire
+_search_cache = {}
+CACHE_TIMEOUT = 3600  # 1 heure
+
+def get_cache_key(query, domain, study_type, period, keywords):
+    """Générer une clé de cache unique pour la recherche"""
+    cache_string = f"{query}_{domain}_{study_type}_{period}_{keywords}"
+    return hashlib.md5(cache_string.encode()).hexdigest()
+
+def get_cached_results(query, domain, study_type, period, keywords):
+    """Récupérer les résultats mis en cache"""
+    cache_key = get_cache_key(query, domain, study_type, period, keywords)
+    if cache_key in _search_cache:
+        cached_data = _search_cache[cache_key]
+        # Vérifier si le cache n'a pas expiré
+        if datetime.now() < cached_data['expires']:
+            print(f"INFO - Utilisation du cache pour: {cache_key[:10]}...")
+            return cached_data['results']
+        else:
+            # Supprimer l'entrée expirée
+            del _search_cache[cache_key]
+    return None
+
+def cache_results(query, domain, study_type, period, keywords, results):
+    """Mettre en cache les résultats de recherche"""
+    cache_key = get_cache_key(query, domain, study_type, period, keywords)
+    expires = datetime.now() + timedelta(seconds=CACHE_TIMEOUT)
+    _search_cache[cache_key] = {
+        'results': results,
+        'expires': expires,
+        'cached_at': datetime.now()
+    }
+    print(f"INFO - Résultats mis en cache: {cache_key[:10]}...")
+
 # Désactiver les warnings SSL pour les connexions non vérifié@main.route('/export/pdf')
 def export_pdf():
     # Récupérer les paramètres de recherche
@@ -100,15 +140,23 @@ def results_page():
     error_message = None
     
     try:
-        # Recherche PubMed réelle avec fallback sur données simulées
-        all_articles = fetch_real_pubmed_data_with_fallback(
-            query, 
-            max_results=200,
-            domain=domain,
-            study_type=study_type, 
-            keywords=keywords,
-            period=period
-        )
+        # Vérifier le cache en premier
+        cached_results = get_cached_results(query, domain, study_type, period, keywords)
+        if cached_results is not None:
+            print("INFO - Résultats récupérés du cache")
+            all_articles = cached_results
+        else:
+            # Recherche PubMed réelle avec fallback sur données simulées
+            all_articles = fetch_real_pubmed_data_with_fallback(
+                query, 
+                max_results=200,
+                domain=domain,
+                study_type=study_type, 
+                keywords=keywords,
+                period=period
+            )
+            # Mettre en cache les résultats
+            cache_results(query, domain, study_type, period, keywords, all_articles)
         
         if not all_articles:
             print("ATTENTION - Aucun article trouvé")
@@ -336,12 +384,8 @@ def generate_mock_articles(domain, study_type, keywords, period, count=50):
     journals = [
         'New England Journal of Medicine',
         'The Lancet', 
-        'JAMA',
-        'Nature Medicine',
-        'Circulation',
-        'Journal of Clinical Oncology',
-        'Neurology',
-        'American Heart Journal'
+        'JAMA',        
+        'The BMJ'        
     ]
     
     authors_pool = [
@@ -672,7 +716,7 @@ def process_pubmed_xml(root):
         return articles
 
 def analyze_articles(articles):
-    """Analyser les articles et générer des statistiques"""
+    """Analyser les articles et générer des statistiques avec scoring amélioré"""
     if not articles:
         return {}
     
@@ -686,7 +730,8 @@ def analyze_articles(articles):
         'years': {},
         'avg_sample_size': 0,
         'total_sample_size': 0,
-        'validation_score': 0
+        'validation_score': 0,
+        'quality_indicators': {}
     }
     
     # Analyse des types d'études
@@ -711,15 +756,57 @@ def analyze_articles(articles):
         analysis['avg_sample_size'] = sum(sample_sizes) / len(sample_sizes)
         analysis['total_sample_size'] = sum(sample_sizes)
     
-    # Score de validation (pourcentage de données complètes)
-    complete_data = sum(1 for a in articles if all([
-        a.get('title'),
-        a.get('abstract'),
-        a.get('authors'),
-        a.get('journal'),
-        a.get('year')
-    ]))
-    analysis['validation_score'] = (complete_data / len(articles)) * 100 if articles else 0
+    # Score de validation amélioré selon le README
+    if analysis['total_articles'] > 0:
+        # Facteur 1: Qualité des Abstracts (40%)
+        abstract_ratio = analysis['with_abstracts'] / analysis['total_articles']
+        factor1 = abstract_ratio * 40
+        
+        # Facteur 2: Critères de Jugement Principaux (30%)
+        primary_outcome_ratio = analysis['with_primary_outcomes'] / analysis['total_articles']
+        factor2 = primary_outcome_ratio * 30
+        
+        # Facteur 3: Tailles d'Échantillon (20%)
+        sample_size_ratio = analysis['with_sample_sizes'] / analysis['total_articles']
+        factor3 = sample_size_ratio * 20
+        
+        # Facteur 4: Diversité des Types d'Études (10%)
+        study_type_diversity = min(len(analysis['study_types']) / 5, 1.0)  # Max 5 types
+        factor4 = study_type_diversity * 10
+        
+        # Score final
+        analysis['validation_score'] = round(factor1 + factor2 + factor3 + factor4, 1)
+        
+        # Détail des facteurs pour transparence
+        analysis['validation_factors'] = {
+            'abstract_quality': round(factor1, 1),
+            'primary_outcomes': round(factor2, 1),
+            'sample_sizes': round(factor3, 1),
+            'study_diversity': round(factor4, 1)
+        }
+        
+        # Interprétation du score
+        if analysis['validation_score'] >= 90:
+            analysis['validation_interpretation'] = "Excellent - Données très fiables"
+        elif analysis['validation_score'] >= 75:
+            analysis['validation_interpretation'] = "Bon - Données généralement fiables"
+        elif analysis['validation_score'] >= 60:
+            analysis['validation_interpretation'] = "Moyen - Validation manuelle recommandée"
+        else:
+            analysis['validation_interpretation'] = "Faible - Vérification manuelle nécessaire"
+    
+    # Indicateurs de qualité supplémentaires
+    analysis['quality_indicators'] = {
+        'complete_metadata_ratio': len([a for a in articles if all([
+            a.get('title'), a.get('abstract'), a.get('authors'), 
+            a.get('journal'), a.get('year')
+        ])]) / len(articles) * 100 if articles else 0,
+        'recent_articles': len([a for a in articles if a.get('year', 0) >= 2020]),
+        'high_impact_journals': len(set([a.get('journal') for a in articles if a.get('journal') in [
+            'New England Journal of Medicine', 'The Lancet', 'JAMA', 'Nature Medicine'
+        ]])),
+        'avg_authors_per_article': sum(len(a.get('authors', [])) for a in articles) / len(articles) if articles else 0
+    }
     
     return analysis
 
@@ -803,19 +890,23 @@ def export_csv():
     query = build_pubmed_query(keywords, domain, study_type, period)
     articles = fetch_real_pubmed_data_with_fallback(query, max_results=200, domain=domain, study_type=study_type, keywords=keywords, period=period)
     
+    # Enrichir les articles avec des métadonnées avancées
+    enhanced_articles = [get_enhanced_article_metadata(article) for article in articles]
+    
     # Créer le CSV
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # En-têtes
+    # En-têtes enrichis
     writer.writerow([
         'Titre', 'Auteurs', 'Journal', 'Année', 'PMID', 'DOI',
-        'Type d\'étude', 'Taille échantillon', 'Critère principal',
-        'Mots-clés', 'Résumé', 'URL'
+        'Type d\'étude', 'Taille échantillon', 'Catégorie échantillon',
+        'Critère principal', 'Niveau de preuve', 'Score qualité (%)',
+        'Âge article (ans)', 'Récence', 'Mots-clés', 'Résumé', 'URL'
     ])
     
-    # Données
-    for article in articles:
+    # Données enrichies
+    for article in enhanced_articles:
         writer.writerow([
             article.get('title', ''),
             '; '.join(article.get('authors', [])),
@@ -825,7 +916,12 @@ def export_csv():
             article.get('doi', ''),
             article.get('study_type', ''),
             article.get('sample_size', ''),
+            article.get('sample_category', ''),
             article.get('primary_outcome', ''),
+            article.get('evidence_level', ''),
+            article.get('quality_score', ''),
+            article.get('article_age_years', ''),
+            article.get('recency', ''),
             '; '.join(article.get('keywords', [])),
             article.get('summary', ''),
             article.get('url', '')
@@ -840,7 +936,7 @@ def export_csv():
         mem,
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f'pubmed_results_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        download_name=f'pubmed_enhanced_results_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
     )
 
 
@@ -855,10 +951,43 @@ def export_json():
     # Construire la requête et récupérer les données
     query = build_pubmed_query(keywords, domain, study_type, period)
     articles = fetch_real_pubmed_data_with_fallback(query, max_results=200, domain=domain, study_type=study_type, keywords=keywords, period=period)
-    analysis = analyze_articles(articles)
     
-    # Créer la structure JSON
+    # Enrichir les articles
+    enhanced_articles = [get_enhanced_article_metadata(article) for article in articles]
+    
+    # Analyses enrichies
+    analysis = analyze_articles(enhanced_articles)
+    
+    # Analyses supplémentaires sur les métadonnées enrichies
+    quality_distribution = {}
+    evidence_levels = {}
+    sample_categories = {}
+    recency_distribution = {}
+    
+    for article in enhanced_articles:
+        # Distribution des scores de qualité
+        quality_range = f"{(article.get('quality_score', 0) // 20) * 20}-{(article.get('quality_score', 0) // 20) * 20 + 19}%"
+        quality_distribution[quality_range] = quality_distribution.get(quality_range, 0) + 1
+        
+        # Niveaux de preuve
+        evidence_level = article.get('evidence_level', 'Non défini')
+        evidence_levels[evidence_level] = evidence_levels.get(evidence_level, 0) + 1
+        
+        # Catégories d'échantillon
+        sample_cat = article.get('sample_category', 'Non défini')
+        sample_categories[sample_cat] = sample_categories.get(sample_cat, 0) + 1
+        
+        # Distribution de récence
+        recency = article.get('recency', 'Non défini')
+        recency_distribution[recency] = recency_distribution.get(recency, 0) + 1
+    
+    # Créer la structure JSON enrichie
     data = {
+        'metadata': {
+            'export_date': datetime.now().isoformat(),
+            'application_version': '2.0_enhanced',
+            'total_articles_analyzed': len(enhanced_articles)
+        },
         'search_parameters': {
             'keywords': keywords,
             'domain': domain,
@@ -866,9 +995,17 @@ def export_json():
             'period': period,
             'query': query
         },
-        'analysis': analysis,
-        'articles': articles,
-        'export_date': datetime.now().isoformat()
+        'basic_analysis': analysis,
+        'enhanced_analysis': {
+            'quality_score_distribution': quality_distribution,
+            'evidence_levels': evidence_levels,
+            'sample_size_categories': sample_categories,
+            'recency_distribution': recency_distribution,
+            'average_quality_score': sum(a.get('quality_score', 0) for a in enhanced_articles) / len(enhanced_articles) if enhanced_articles else 0,
+            'high_quality_articles': len([a for a in enhanced_articles if a.get('quality_score', 0) >= 80]),
+            'recent_high_evidence': len([a for a in enhanced_articles if 'Très élevé' in a.get('evidence_level', '') and a.get('article_age_years', 999) <= 5])
+        },
+        'articles': enhanced_articles
     }
     
     # Créer le fichier JSON
@@ -881,7 +1018,7 @@ def export_json():
         mem,
         mimetype='application/json',
         as_attachment=True,
-        download_name=f'pubmed_results_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        download_name=f'pubmed_enhanced_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
     )
 
 
@@ -1007,3 +1144,227 @@ def calculate_realistic_article_count(keywords, domain, study_type, period):
     
     # Assurer un minimum raisonnable
     return max(5, realistic_count)
+
+def get_enhanced_article_metadata(article):
+    """Enrichir les métadonnées d'un article avec des informations calculées"""
+    enhanced = article.copy()
+    
+    # Calculer le score de qualité de l'article
+    quality_score = 0
+    if article.get('abstract'):
+        quality_score += 40
+    if article.get('primary_outcome') and article.get('primary_outcome') != 'Non identifié':
+        quality_score += 30
+    if article.get('sample_size'):
+        quality_score += 20
+    if article.get('doi'):
+        quality_score += 10
+    
+    enhanced['quality_score'] = quality_score
+    
+    # Ajouter le niveau de preuve estimé
+    study_type = article.get('study_type', '').lower()
+    if 'systematic review' in study_type or 'meta-analysis' in study_type:
+        enhanced['evidence_level'] = 'I - Très élevé'
+    elif 'randomized controlled' in study_type:
+        enhanced['evidence_level'] = 'II - Élevé'
+    elif 'cohort' in study_type:
+        enhanced['evidence_level'] = 'III - Modéré'
+    elif 'case-control' in study_type:
+        enhanced['evidence_level'] = 'IV - Faible'
+    else:
+        enhanced['evidence_level'] = 'V - Très faible'
+    
+    # Ajouter la catégorie de taille d'échantillon
+    sample_size = article.get('sample_size', 0)
+    if sample_size >= 1000:
+        enhanced['sample_category'] = 'Large (≥1000)'
+    elif sample_size >= 100:
+        enhanced['sample_category'] = 'Moyen (100-999)'
+    elif sample_size >= 50:
+        enhanced['sample_category'] = 'Petit (50-99)'
+    else:
+        enhanced['sample_category'] = 'Très petit (<50)'
+    
+    # Estimer l'âge de l'article
+    current_year = datetime.now().year
+    article_year = article.get('year', current_year)
+    article_age = current_year - article_year if article_year else 0
+    enhanced['article_age_years'] = article_age
+    
+    if article_age <= 2:
+        enhanced['recency'] = 'Très récent (≤2 ans)'
+    elif article_age <= 5:
+        enhanced['recency'] = 'Récent (3-5 ans)'
+    elif article_age <= 10:
+        enhanced['recency'] = 'Modérément ancien (6-10 ans)'
+    else:
+        enhanced['recency'] = 'Ancien (>10 ans)'
+    
+    return enhanced
+
+@main.route('/api/filters/advanced')
+def advanced_filters():
+    """API pour récupérer des options de filtres avancés basés sur les données actuelles"""
+    keywords = request.args.get('keywords', '').strip()
+    domain = request.args.get('domain', '')
+    study_type = request.args.get('studyType', '')
+    period = int(request.args.get('period', 10))
+    
+    # Construire la requête et récupérer les données
+    query = build_pubmed_query(keywords, domain, study_type, period)
+    articles = fetch_real_pubmed_data_with_fallback(query, max_results=200, domain=domain, study_type=study_type, keywords=keywords, period=period)
+    
+    # Enrichir les articles
+    enhanced_articles = [get_enhanced_article_metadata(article) for article in articles]
+    
+    # Extraire les options de filtres dynamiques
+    filters = {
+        'journals': list(set([a.get('journal', '') for a in enhanced_articles if a.get('journal')])),
+        'evidence_levels': list(set([a.get('evidence_level', '') for a in enhanced_articles if a.get('evidence_level')])),
+        'sample_categories': list(set([a.get('sample_category', '') for a in enhanced_articles if a.get('sample_category')])),
+        'recency_options': list(set([a.get('recency', '') for a in enhanced_articles if a.get('recency')])),
+        'quality_ranges': [
+            {'min': 80, 'max': 100, 'label': 'Excellente qualité (80-100%)'},
+            {'min': 60, 'max': 79, 'label': 'Bonne qualité (60-79%)'},
+            {'min': 40, 'max': 59, 'label': 'Qualité moyenne (40-59%)'},
+            {'min': 0, 'max': 39, 'label': 'Qualité faible (0-39%)'}
+        ],
+        'year_range': {
+            'min': min([a.get('year', 2024) for a in enhanced_articles]) if enhanced_articles else 2024,
+            'max': max([a.get('year', 2024) for a in enhanced_articles]) if enhanced_articles else 2024
+        },
+        'sample_size_ranges': [
+            {'min': 1000, 'max': 99999, 'label': 'Large échantillon (≥1000)'},
+            {'min': 100, 'max': 999, 'label': 'Échantillon moyen (100-999)'},
+            {'min': 50, 'max': 99, 'label': 'Petit échantillon (50-99)'},
+            {'min': 1, 'max': 49, 'label': 'Très petit échantillon (<50)'}
+        ]
+    }
+    
+    return jsonify(filters)
+
+@main.route('/api/search/filtered')
+def filtered_search():
+    """API pour recherche avec filtres avancés"""
+    # Paramètres de base
+    keywords = request.args.get('keywords', '').strip()
+    domain = request.args.get('domain', '')
+    study_type = request.args.get('studyType', '')
+    period = int(request.args.get('period', 10))
+    
+    # Filtres avancés
+    min_quality = int(request.args.get('minQuality', 0))
+    max_quality = int(request.args.get('maxQuality', 100))
+    evidence_levels = request.args.getlist('evidenceLevels')
+    journals = request.args.getlist('journals')
+    min_sample_size = int(request.args.get('minSampleSize', 0))
+    max_sample_size = int(request.args.get('maxSampleSize', 99999))
+    min_year = int(request.args.get('minYear', 1990))
+    max_year = int(request.args.get('maxYear', 2024))
+    
+    # Recherche de base
+    query = build_pubmed_query(keywords, domain, study_type, period)
+    articles = fetch_real_pubmed_data_with_fallback(query, max_results=200, domain=domain, study_type=study_type, keywords=keywords, period=period)
+    
+    # Enrichir et filtrer
+    enhanced_articles = [get_enhanced_article_metadata(article) for article in articles]
+    
+    filtered_articles = []
+    for article in enhanced_articles:
+        # Filtrer par score de qualité
+        if not (min_quality <= article.get('quality_score', 0) <= max_quality):
+            continue
+            
+        # Filtrer par niveau de preuve
+        if evidence_levels and article.get('evidence_level') not in evidence_levels:
+            continue
+            
+        # Filtrer par journal
+        if journals and article.get('journal') not in journals:
+            continue
+            
+        # Filtrer par taille d'échantillon
+        sample_size = article.get('sample_size', 0)
+        if not (min_sample_size <= sample_size <= max_sample_size):
+            continue
+            
+        # Filtrer par année
+        year = article.get('year', 0)
+        if not (min_year <= year <= max_year):
+            continue
+            
+        filtered_articles.append(article)
+    
+    # Analyser les résultats filtrés
+    analysis = analyze_articles(filtered_articles)
+    
+    return jsonify({
+        'articles': filtered_articles,
+        'analysis': analysis,
+        'total_filtered': len(filtered_articles),
+        'total_original': len(enhanced_articles),
+        'filter_effectiveness': len(filtered_articles) / len(enhanced_articles) * 100 if enhanced_articles else 0
+    })
+
+@main.route('/api/system/stats')
+def system_stats():
+    """API pour récupérer les statistiques système et de performance"""
+    
+    # Statistiques du cache
+    cache_stats = {
+        'total_cached_searches': len(_search_cache),
+        'cache_entries': []
+    }
+    
+    for key, data in _search_cache.items():
+        cache_stats['cache_entries'].append({
+            'cache_key': key[:10] + '...',
+            'cached_at': data['cached_at'].isoformat(),
+            'expires': data['expires'].isoformat(),
+            'articles_count': len(data['results']),
+            'is_expired': datetime.now() > data['expires']
+        })
+    
+    # Nettoyage automatique du cache expiré
+    expired_keys = [k for k, v in _search_cache.items() if datetime.now() > v['expires']]
+    for key in expired_keys:
+        del _search_cache[key]
+    
+    cache_stats['expired_cleaned'] = len(expired_keys)
+    cache_stats['active_entries'] = len(_search_cache)
+    
+    # Statistiques de l'application
+    app_stats = {
+        'version': '2.0_enhanced',
+        'features': [
+            'Cache système avec gestion automatique',
+            'Export enrichi avec métadonnées avancées',
+            'Scoring de validation selon 4 facteurs',
+            'Filtres avancés par qualité et niveau de preuve',
+            'Analyses statistiques enrichies',
+            'Système de fallback PubMed avec données mock réalistes'
+        ],
+        'supported_domains': 25,
+        'supported_study_types': 15,
+        'export_formats': ['CSV enrichi', 'JSON avec analyses', 'PDF détaillé']
+    }
+    
+    return jsonify({
+        'cache_statistics': cache_stats,
+        'application_info': app_stats,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@main.route('/api/cache/clear')
+def clear_cache():
+    """API pour vider le cache système"""
+    global _search_cache
+    cleared_count = len(_search_cache)
+    _search_cache.clear()
+    
+    return jsonify({
+        'status': 'success',
+        'message': f'{cleared_count} entrées de cache supprimées',
+        'timestamp': datetime.now().isoformat()
+    })
