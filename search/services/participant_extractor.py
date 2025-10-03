@@ -39,14 +39,25 @@ class ParticipantExtractor:
     }
     
     # Patterns pour détecter les nombres en chiffres
+    # Ordre important: les patterns les plus spécifiques et prioritaires en premier
     NUMERIC_PATTERNS = [
-        # Pattern principal: "N = 123", "n = 123", "N=123"
-        r'[Nn]\s*=\s*(\d{1,6})',
+        # PRIORITAIRES: Déclarations principales (début d'abstract)
+        # "In total, 119 individuals participated"
+        r'(?:in\s+)?total[,\s]+(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|enrolled|were\s+included|were\s+recruited)',
         
-        # Participants/patients + nombre
+        # "119 participants were enrolled/included/recruited"
+        r'(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|were\s+enrolled|were\s+included|were\s+recruited|were\s+randomized)',
+        
+        # "A total of 119 participants"
+        r'total\s+of\s+(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        
+        # "The study included 119 participants"
+        r'(?:study|trial|analysis)\s+(?:included|enrolled|recruited)\s+(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        
+        # "119 patients" ou "119 participants" (simple mais efficace en début)
         r'(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
-        r'(?:participants?|patients?|subjects?|individuals?|cases?)\s*[:\(]?\s*[Nn]?\s*=?\s*(\d{1,6})',
         
+        # SECONDAIRES: Formats avec N = (souvent sous-groupes)
         # Sample size patterns
         r'sample\s+size\s*[:\(]?\s*[Nn]?\s*=?\s*(\d{1,6})',
         r'enrolled\s+(\d{1,6})\s+(?:participants?|patients?|subjects?)',
@@ -55,11 +66,13 @@ class ParticipantExtractor:
         r'study\s+population\s*[:\(]?\s*[Nn]?\s*=?\s*(\d{1,6})',
         r'cohort\s+of\s+(\d{1,6})\s+(?:participants?|patients?|subjects?)',
         
-        # Total/randomized patterns
-        r'total\s+of\s+(\d{1,6})\s+(?:participants?|patients?|subjects?)',
-        r'randomized\s+(\d{1,6})\s+(?:participants?|patients?|subjects?)',
+        # Pattern N = (peut être un sous-groupe, donc moins prioritaire)
+        r'[Nn]\s*=\s*(\d{1,6})',
         
-        # Entre parenthèses ou crochets
+        # Participants/patients avec format variable
+        r'(?:participants?|patients?|subjects?|individuals?|cases?)\s*[:\(]?\s*[Nn]?\s*=?\s*(\d{1,6})',
+        
+        # Entre parenthèses ou crochets (souvent précisions, donc basse priorité)
         r'\([\s\w]*[Nn]\s*=\s*(\d{1,6})[\s\w]*\)',
         r'\[[\s\w]*[Nn]\s*=\s*(\d{1,6})[\s\w]*\]',
     ]
@@ -259,7 +272,7 @@ class ParticipantExtractor:
     
     @classmethod
     def _calculate_confidence(cls, abstract: str, match, pattern: str, pattern_index: int, pattern_type: str) -> float:
-        """Calcule un score de confiance basé sur le contexte"""
+        """Calcule un score de confiance basé sur le contexte et la position"""
         score = 0.0
         
         # Contexte autour du match
@@ -269,25 +282,56 @@ class ParticipantExtractor:
         
         # Score de base selon le pattern et type
         if pattern_type == 'numeric':
+            # Nouveau système: patterns prioritaires ont les meilleurs scores
             base_scores = {
-                0: 0.9,  # N = 123 (très fiable)
-                1: 0.8,  # 123 participants
-                2: 0.7,  # participants: N = 123
-                3: 0.8,  # sample size: 123
-                4: 0.8,  # enrolled 123 participants
+                0: 0.95,  # "In total, 119 individuals participated" - PRIORITÉ MAX
+                1: 0.95,  # "119 participants were enrolled" - PRIORITÉ MAX
+                2: 0.90,  # "total of 119 participants" - HAUTE PRIORITÉ
+                3: 0.90,  # "study included 119 participants" - HAUTE PRIORITÉ
+                4: 0.85,  # "119 participants" simple - PRIORITÉ MOYENNE-HAUTE
+                5: 0.75,  # sample size: 123
+                6: 0.75,  # enrolled 123 participants
+                7: 0.70,  # study population
+                8: 0.70,  # cohort of
+                9: 0.60,  # N = 123 (souvent sous-groupe) - PRIORITÉ BASSE
+                10: 0.65, # participants: N = 123
+                11: 0.50, # (N = 123) entre parenthèses - TRÈS BASSE PRIORITÉ
+                12: 0.50, # [N = 123] entre crochets - TRÈS BASSE PRIORITÉ
             }
             score += base_scores.get(pattern_index, 0.6)
         else:  # written
             # Les nombres en lettres sont moins fréquents mais souvent plus précis
             score += 0.7
         
+        # BONUS IMPORTANT: Position dans l'abstract
+        # Les premières phrases mentionnent généralement le nombre total
+        abstract_length = len(abstract)
+        position_ratio = match.start() / abstract_length if abstract_length > 0 else 0.5
+        
+        if position_ratio < 0.2:  # Premiers 20% de l'abstract
+            score += 0.15  # Fort bonus
+        elif position_ratio < 0.4:  # Premiers 40%
+            score += 0.05  # Léger bonus
+        elif position_ratio > 0.8:  # Derniers 20%
+            score -= 0.10  # Malus (souvent des sous-analyses)
+        
         # Bonus pour mots-clés dans le contexte
         keyword_count = sum(1 for keyword in cls.CONTEXT_KEYWORDS if keyword in context)
-        score += min(keyword_count * 0.1, 0.3)
+        score += min(keyword_count * 0.05, 0.15)  # Réduit l'impact
         
-        # Bonus si "N =" est présent (format standard)
+        # MALUS si "N =" est présent (souvent un sous-groupe, pas le total)
+        # SAUF si c'est dans le pattern principal avec "total"
         if re.search(r'[Nn]\s*=', match.group()):
-            score += 0.2
+            if not re.search(r'total', context, re.IGNORECASE):
+                score -= 0.15  # Malus au lieu de bonus !
+        
+        # Bonus pour verbes d'action (participated, enrolled, recruited)
+        if any(word in context for word in ['participated', 'enrolled', 'recruited', 'included', 'randomized']):
+            score += 0.10
+        
+        # Bonus si "in total" ou "a total of" dans le contexte
+        if re.search(r'(?:in\s+)?total\s+of', context, re.IGNORECASE):
+            score += 0.15
         
         # Bonus pour les nombres en lettres dans certains contextes
         if pattern_type == 'written':
@@ -315,11 +359,11 @@ class ParticipantExtractor:
             
             if num:
                 if num < 10:
-                    score -= 0.3
+                    score -= 0.4  # Malus plus fort pour très petits nombres
                 elif num > 100000:
                     score -= 0.2
-                elif 20 <= num <= 10000:
-                    score += 0.1
+                elif 30 <= num <= 10000:
+                    score += 0.05  # Léger bonus pour tailles typiques
         except:
             pass
         

@@ -83,6 +83,93 @@ def search_api(request):
     return Response({"status": "success", **payload})
 
 @csrf_exempt
+@api_view(['POST'])
+def export_all_results(request):
+    """
+    Récupère TOUS les résultats d'une recherche pour l'export (pas seulement ceux affichés)
+    Fait des requêtes multiples si nécessaire pour contourner la limite de 200 par requête
+    """
+    data = request.data or {}
+    
+    # Récupérer les paramètres de recherche originaux
+    filters = dict(
+        keywords=data.get('keywords', data.get('query', '')),
+        study_type=data.get('studyType', ''),
+        journal_quality=data.get('journalQuality', ''),
+        region=data.get('regionFilter', ''),
+        time_period=data.get('timePeriod', '10'),
+        sample_size=data.get('sampleSize', '')
+    )
+
+    keyword = (filters['keywords'] or '').strip()
+    
+    # Limite d'export pour éviter les timeouts (max 5000 articles)
+    MAX_EXPORT = 5000
+    BATCH_SIZE = 200  # Limite PubMed par requête
+    
+    try:
+        # Première requête pour connaître le total
+        total_available, first_batch = search_pubmed(
+            term=keyword,
+            start=0,
+            size=BATCH_SIZE,
+            study_type=filters['study_type'],
+            time_period=filters['time_period']
+        )
+        
+        all_articles = first_batch
+        logger.info(f"Export: First batch retrieved {len(first_batch)} articles, total available: {total_available}")
+        
+        # Calculer combien d'articles on peut récupérer au maximum
+        articles_to_fetch = min(total_available, MAX_EXPORT)
+        
+        # Récupérer les articles restants par batch de 200
+        if articles_to_fetch > BATCH_SIZE:
+            remaining_batches = (articles_to_fetch - BATCH_SIZE + BATCH_SIZE - 1) // BATCH_SIZE
+            
+            for batch_num in range(1, remaining_batches + 1):
+                start_index = batch_num * BATCH_SIZE
+                if start_index >= articles_to_fetch:
+                    break
+                    
+                logger.info(f"Export: Fetching batch {batch_num + 1}, starting at {start_index}")
+                
+                try:
+                    _, batch_articles = search_pubmed(
+                        term=keyword,
+                        start=start_index,
+                        size=BATCH_SIZE,
+                        study_type=filters['study_type'],
+                        time_period=filters['time_period']
+                    )
+                    all_articles.extend(batch_articles)
+                    logger.info(f"Export: Retrieved {len(batch_articles)} articles in batch {batch_num + 1}")
+                except Exception as batch_error:
+                    logger.warning(f"Export: Failed to fetch batch {batch_num + 1}: {batch_error}")
+                    # Continue avec les articles déjà récupérés
+                    break
+        
+        message = f"Retrieved {len(all_articles)} articles out of {total_available} total for export"
+        if articles_to_fetch < total_available:
+            message += f" (limited to {MAX_EXPORT} for performance)"
+        
+        return Response({
+            "status": "success",
+            "data": all_articles,
+            "total": total_available,
+            "returned": len(all_articles),
+            "source": "pubmed",
+            "message": message
+        })
+    except (PubMedError, requests.RequestException, ValueError) as exc:
+        logger.exception("Export all results failed", exc_info=exc)
+        return Response({
+            "status": "error",
+            "message": "Unable to retrieve all results. Please try again later.",
+            "error": str(exc)
+        }, status=503)
+
+@csrf_exempt
 @api_view(['GET', 'POST'])
 def sample_api(request):
     """

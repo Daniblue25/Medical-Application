@@ -9,6 +9,46 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 from datetime import datetime
 
+
+def get_journal_ranking(journal_name):
+    """Classifie une revue médicale selon les standards A+, A, B"""
+    if not journal_name:
+        return 'B'
+        
+    aplus_journals = [
+        'New England Journal of Medicine', 'The Lancet', 'Journal of the American Medical Association',
+        'Nature Medicine', 'Cell', 'Science', 'Nature', 'The BMJ', 'Annals of Internal Medicine',
+        'JAMA Internal Medicine', 'Circulation', 'Nature Genetics', 'The Lancet Oncology',
+        'Journal of Clinical Investigation', 'Nature Immunology', 'Blood', 'Gastroenterology',
+        'Journal of Clinical Oncology', 'The Lancet Neurology', 'Nature Cell Biology'
+    ]
+    
+    a_journals = [
+        'American Journal of Medicine', 'PLOS Medicine', 'European Heart Journal',
+        'Journal of the American College of Cardiology', 'Diabetes Care', 'Hepatology',
+        'Archives of Internal Medicine', 'Clinical Infectious Diseases', 'Kidney International',
+        'Journal of Hepatology', 'American Journal of Respiratory and Critical Care Medicine',
+        'Arthritis & Rheumatism', 'Journal of Allergy and Clinical Immunology',
+        'American Journal of Psychiatry', 'Journal of Clinical Endocrinology & Metabolism',
+        'Hypertension', 'Journal of Immunology', 'Cancer Research', 
+        'Proceedings of the National Academy of Sciences', 'European Journal of Heart Failure', 
+        'Thorax', 'Gut', 'Brain', 'Journal of Neuroscience'
+    ]
+    
+    normalized_journal = journal_name.lower().strip()
+    
+    # Vérifier A+
+    for journal in aplus_journals:
+        if normalized_journal in journal.lower() or journal.lower() in normalized_journal:
+            return 'A+'
+    
+    # Vérifier A
+    for journal in a_journals:
+        if normalized_journal in journal.lower() or journal.lower() in normalized_journal:
+            return 'A'
+    
+    return 'B'
+
 @csrf_exempt
 @api_view(['POST'])
 def export_excel(request):
@@ -19,12 +59,27 @@ def export_excel(request):
     ws = wb.active
     if ws:
         ws.title = 'Search Results'
-        headers = ['PMID', 'Title', 'Authors', 'Journal', 'Year', 'Study Type', 'Quality']
+        headers = ['PMID', 'Title', 'Authors', 'Journal', 'Year', 'Study Type', 'Quality', 'Participants', 'Region']
         ws.append(headers)
         for a in articles:
+            # Utiliser la classification de revues pour la qualité
+            quality = get_journal_ranking(a.get('journal', ''))
+            participants = ''
+            if a.get('sample_size'):
+                participants = str(a.get('sample_size'))
+                if a.get('sample_size_confidence'):
+                    participants += f" ({a.get('sample_size_confidence')})"
+            
             ws.append([
-                a.get('pmid', ''), a.get('title', ''), a.get('authors', ''), a.get('journal', ''),
-                a.get('year', ''), a.get('study_type', ''), a.get('quality', '')
+                a.get('pmid', ''), 
+                a.get('title', ''), 
+                a.get('authors', ''), 
+                a.get('journal', ''),
+                a.get('year', ''), 
+                a.get('study_type', ''), 
+                quality,  # Classification des revues (A+, A, B)
+                participants,
+                a.get('region', '')
             ])
     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
         wb.save(tmp.name)

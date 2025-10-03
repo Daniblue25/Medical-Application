@@ -102,6 +102,20 @@
                     <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Jusqu'à 20 000 résultats</span>
                 </div>
             </div>
+            <!-- Progress Bar for Export -->
+            <div id="exportProgressBar" class="hidden bg-white rounded-xl shadow-lg border border-blue-200 p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-download text-blue-600 animate-bounce"></i>
+                        <span class="text-sm font-medium text-gray-900" id="exportProgressText">Récupération des articles...</span>
+                    </div>
+                    <span class="text-sm font-semibold text-blue-600" id="exportProgressPercent">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="exportProgressBarFill" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2" id="exportProgressDetails">Préparation...</p>
+            </div>
             <div id="resultsSection" class="hidden space-y-6">
                 <div id="cacheAlert" class="hidden px-4 py-3 rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-700 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <span>Le cache applicatif est plein. Videz-le pour rafraîchir les résultats.</span>
@@ -246,7 +260,12 @@ const elements = {
     closeModalBtn: document.getElementById('closeModal'),
     viewPubmedBtn: document.getElementById('viewPubmed'),
     saveArticleBtn: document.getElementById('saveArticleBtn'),
-    cacheAlert: document.getElementById('cacheAlert')
+    cacheAlert: document.getElementById('cacheAlert'),
+    exportProgressBar: document.getElementById('exportProgressBar'),
+    exportProgressText: document.getElementById('exportProgressText'),
+    exportProgressPercent: document.getElementById('exportProgressPercent'),
+    exportProgressBarFill: document.getElementById('exportProgressBarFill'),
+    exportProgressDetails: document.getElementById('exportProgressDetails')
 };
 
 const state = {
@@ -775,6 +794,9 @@ async function performSearch({ page } = {}) {
     const payload = getFormPayload();
     payload.page = state.pagination.page;
     payload.pageSize = state.pagination.pageSize;
+    
+    // Sauvegarder les paramètres pour l'export complet
+    state.lastSearchParams = { ...payload };
 
     // Cacher le message de bienvenue
     const welcomeMsg = document.getElementById('welcomeMessage');
@@ -937,6 +959,59 @@ elements.quickFilters.forEach(button => button.addEventListener('click', () => {
     performSearch({ page: 1 });
 }));
 
+// Fonctions de gestion de la barre de progression d'export
+function showExportProgress() {
+    if (elements.exportProgressBar) {
+        elements.exportProgressBar.classList.remove('hidden');
+        resetExportProgress();
+    }
+}
+
+function hideExportProgress() {
+    if (elements.exportProgressBar) {
+        setTimeout(() => {
+            elements.exportProgressBar.classList.add('hidden');
+        }, 1000);
+    }
+}
+
+function updateExportProgress(current, total, message = '') {
+    if (!elements.exportProgressBar) return;
+    
+    const percent = Math.round((current / total) * 100);
+    
+    if (elements.exportProgressPercent) {
+        elements.exportProgressPercent.textContent = `${percent}%`;
+    }
+    
+    if (elements.exportProgressBarFill) {
+        elements.exportProgressBarFill.style.width = `${percent}%`;
+    }
+    
+    if (elements.exportProgressText && message) {
+        elements.exportProgressText.textContent = message;
+    }
+    
+    if (elements.exportProgressDetails) {
+        elements.exportProgressDetails.textContent = `${current} / ${total} articles récupérés`;
+    }
+}
+
+function resetExportProgress() {
+    if (elements.exportProgressPercent) {
+        elements.exportProgressPercent.textContent = '0%';
+    }
+    if (elements.exportProgressBarFill) {
+        elements.exportProgressBarFill.style.width = '0%';
+    }
+    if (elements.exportProgressText) {
+        elements.exportProgressText.textContent = 'Récupération des articles...';
+    }
+    if (elements.exportProgressDetails) {
+        elements.exportProgressDetails.textContent = 'Préparation...';
+    }
+}
+
 if (elements.exportDropdown) {
     elements.exportDropdown.querySelectorAll('button[data-type]').forEach(button => button.addEventListener('click', async event => {
         event.stopPropagation();
@@ -960,27 +1035,95 @@ if (elements.exportDropdown) {
             return;
         }
 
-        const endpoint = type === 'excel' ? '/export/excel' : '/export/pdf';
         try {
-            const response = await fetch(endpoint, {
+            console.log('[Export] Paramètres de recherche:', state.lastSearchParams);
+            
+            // Afficher la barre de progression
+            showExportProgress();
+            updateExportProgress(0, 100, 'Initialisation de l\'export...');
+            
+            // Étape 1: Récupérer TOUS les résultats de la recherche (0-60%)
+            updateExportProgress(10, 100, 'Récupération des articles depuis PubMed...');
+            
+            const allResultsResponse = await fetch('/api/export-all', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ articles: state.results })
+                body: JSON.stringify(state.lastSearchParams || {})
             });
-            if (!response.ok) throw new Error('Export failed');
-            const blob = await response.blob();
+            
+            console.log('[Export] Réponse API:', allResultsResponse.status);
+            
+            if (!allResultsResponse.ok) {
+                const errorText = await allResultsResponse.text();
+                console.error('[Export] Erreur API:', errorText);
+                hideExportProgress();
+                throw new Error('Failed to get all results: ' + errorText);
+            }
+            
+            updateExportProgress(60, 100, 'Articles récupérés avec succès...');
+            
+            const allResultsData = await allResultsResponse.json();
+            console.log('[Export] Données reçues:', {
+                status: allResultsData.status,
+                total: allResultsData.total,
+                returned: allResultsData.returned,
+                articlesCount: allResultsData.data?.length
+            });
+            
+            const allArticles = allResultsData.data || [];
+            
+            if (allArticles.length === 0) {
+                hideExportProgress();
+                showStatus('⚠️ Aucun article à exporter', 'warning');
+                return;
+            }
+            
+            // Étape 2: Ajouter la classification des revues (60-75%)
+            updateExportProgress(70, 100, `Classification de ${allArticles.length} revues...`);
+            
+            const articlesWithRanking = allArticles.map(article => ({
+                ...article,
+                quality: getJournalRanking(article.journal || '')
+            }));
+            
+            // Étape 3: Générer le fichier d'export (75-95%)
+            updateExportProgress(80, 100, `Génération du fichier ${type.toUpperCase()}...`);
+            
+            const endpoint = type === 'excel' ? '/export/excel' : '/export/pdf';
+            const exportResponse = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ articles: articlesWithRanking })
+            });
+            
+            if (!exportResponse.ok) {
+                hideExportProgress();
+                throw new Error('Export failed');
+            }
+            
+            updateExportProgress(95, 100, 'Téléchargement du fichier...');
+            
+            const blob = await exportResponse.blob();
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = type === 'excel' ? 'medical_search_results.xlsx' : 'medical_search_results.pdf';
+            link.download = type === 'excel' ? 
+                `medical_search_complete_${allArticles.length}articles.xlsx` : 
+                `medical_search_complete_${allArticles.length}articles.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            showStatus(`Exported ${state.results.length} articles to ${type.toUpperCase()}.`, 'success');
+            
+            // Étape finale (100%)
+            updateExportProgress(100, 100, '✅ Export terminé avec succès !');
+            
+            setTimeout(() => hideExportProgress(), 2000);
+            showStatus(`✅ Export réussi: ${allArticles.length} articles exportés en ${type.toUpperCase()}`, 'success');
         } catch (error) {
-            console.error(error);
-            showStatus('Unable to export results right now.', 'error');
+            console.error('[Export Error]', error);
+            hideExportProgress();
+            showStatus('❌ Erreur lors de l\'export. Veuillez réessayer.', 'error');
         }
     }));
 }

@@ -2,11 +2,15 @@ import os
 import re
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
+import logging
 
 import requests
 from requests import Response
 from xml.etree import ElementTree
 from .participant_extractor import ParticipantExtractor
+from .llm_extractor import LLMParticipantExtractor
+
+logger = logging.getLogger(__name__)
 
 
 BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -148,7 +152,9 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
             else []
         )
 
-        # Extraire le nombre de participants de l'abstract
+        # Extraire le nombre de participants avec Regex v2.0 (rapide)
+        # Note: LLM disponible via llm_extractor.py mais trop lent pour recherches temps réel
+        # Utiliser LLM uniquement pour exports où précision > vitesse
         participant_info = ParticipantExtractor.extract_sample_size(abstract)
 
         articles.append(
