@@ -9,6 +9,9 @@ from requests import Response
 from xml.etree import ElementTree
 from .participant_extractor import ParticipantExtractor
 from .llm_extractor import LLMParticipantExtractor
+from .outcome_extractor import OutcomeExtractor
+from .region_detector import get_region_from_affiliation
+from .journal_config import build_journal_filter
 
 logger = logging.getLogger(__name__)
 
@@ -40,17 +43,32 @@ def _request(endpoint: str, params: Dict[str, str]) -> Response:
         f"{BASE_URL}/{endpoint}",
         params=params,
         headers=headers,
-        timeout=DEFAULT_TIMEOUT,
+        timeout=DEFAULT_TIMEOUT
     )
     response.raise_for_status()
     return response
 
 
-def _build_query(term: str, study_type: str = "") -> str:
-    query_parts = [term]
+def _build_query(term: str, study_type: str = "", journal_filter: str = "") -> str:
+    query_parts = []
+    
+    # Si le terme contient déjà des opérateurs booléens (OR, AND), on le recherche dans titre OU abstract
+    if term and ("OR" in term or "AND" in term):
+        # Recherche dans titre OU abstract pour les mots-clés chirurgicaux
+        query_parts.append(f"({term}[Title/Abstract])")
+    elif term:
+        # Recherche simple dans titre OU abstract
+        query_parts.append(f"{term}[Title/Abstract]")
+    
     mapped = PUBLICATION_TYPE_MAP.get(study_type)
     if mapped:
         query_parts.append(mapped)
+    
+    # Ajouter le filtre de journal ciblé
+    journal_query = build_journal_filter(journal_filter)
+    if journal_query:
+        query_parts.append(journal_query)
+    
     return " AND ".join(filter(None, query_parts))
 
 
@@ -130,15 +148,25 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
         ]
 
         author_list: List[Dict[str, str]] = []
+        last_author_affiliation = ""
+        
         for author in article_node.findall("AuthorList/Author"):
-            author_list.append(
-                {
-                    "LastName": author.findtext("LastName") or "",
-                    "ForeName": author.findtext("ForeName") or "",
-                    "Initials": author.findtext("Initials") or "",
-                }
-            )
+            author_data = {
+                "LastName": author.findtext("LastName") or "",
+                "ForeName": author.findtext("ForeName") or "",
+                "Initials": author.findtext("Initials") or "",
+            }
+            author_list.append(author_data)
+            
+            # Extraire l'affiliation du dernier auteur
+            affiliation_node = author.find("AffiliationInfo/Affiliation")
+            if affiliation_node is not None and affiliation_node.text:
+                last_author_affiliation = affiliation_node.text
+        
         authors = _normalise_authors(author_list)
+        
+        # Déterminer la région depuis l'affiliation du dernier auteur
+        region = get_region_from_affiliation(last_author_affiliation) if last_author_affiliation else ""
 
         doi = None
         for id_node in node.findall("PubmedData/ArticleIdList/ArticleId"):
@@ -156,6 +184,10 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
         # Note: LLM disponible via llm_extractor.py mais trop lent pour recherches temps réel
         # Utiliser LLM uniquement pour exports où précision > vitesse
         participant_info = ParticipantExtractor.extract_sample_size(abstract)
+        
+        # ✨ NOUVEAU : Extraction automatique des critères principaux
+        outcomes = OutcomeExtractor.extract_outcomes(abstract)
+        outcome_summary = OutcomeExtractor.extract_summary(abstract)
 
         articles.append(
             {
@@ -171,12 +203,17 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "sample_size": participant_info['sample_size'],
                 "sample_size_confidence": participant_info['confidence'],
                 "sample_size_source": participant_info['matched_text'],
-                "region": "",
+                "region": region,  # Région basée sur l'affiliation du dernier auteur
                 "keywords": mesh_terms,
                 "mesh_terms": mesh_terms,
                 "citations": None,
                 "impact_factor": None,
                 "doi": doi,
+                # ✨ Critère principal uniquement
+                "primary_outcome": outcomes.get('primary_outcome'),
+                "primary_outcome_confidence": outcomes.get('primary_outcome_confidence'),
+                "has_outcomes": bool(outcomes.get('primary_outcome')),
+                "outcome_summary": outcome_summary,
             }
         )
 
@@ -190,6 +227,7 @@ def search_pubmed(
     size: int = 50,
     study_type: str = "",
     time_period: str = "",
+    journal_filter: str = "",
 ) -> Tuple[int, List[Dict]]:
     # Si aucun terme n'est fourni, rechercher tous les articles médicaux récents
     if not term or not term.strip():
@@ -198,7 +236,7 @@ def search_pubmed(
     size = max(1, min(size, 200))
     esearch_params = {
         "db": "pubmed",
-        "term": _build_query(term, study_type),
+        "term": _build_query(term, study_type, journal_filter),
         "retstart": str(start),
         "retmax": str(size),
         "retmode": "json",

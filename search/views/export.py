@@ -52,6 +52,8 @@ def get_journal_ranking(journal_name):
 @csrf_exempt
 @api_view(['POST'])
 def export_excel(request):
+    from search.services.region_detector import get_region_name
+    
     articles = request.data.get('articles', [])
     if not articles:
         return Response({'error': 'No data to export'}, status=400)
@@ -59,27 +61,36 @@ def export_excel(request):
     ws = wb.active
     if ws:
         ws.title = 'Search Results'
-        headers = ['PMID', 'Title', 'Authors', 'Journal', 'Year', 'Study Type', 'Quality', 'Participants', 'Region']
+        # Nouvelles colonnes : Titre / Lien / Année / Journal / Rang / Nb sujet / CJP / Region
+        headers = ['Titre article', 'Lien', 'Année publication', 'Journal', 'Rang', 'Nb de sujet', 'CJP', 'Region ou pays']
         ws.append(headers)
         for a in articles:
-            # Utiliser la classification de revues pour la qualité
+            # Classification de la revue (A+, A, B)
             quality = get_journal_ranking(a.get('journal', ''))
-            participants = ''
-            if a.get('sample_size'):
-                participants = str(a.get('sample_size'))
-                if a.get('sample_size_confidence'):
-                    participants += f" ({a.get('sample_size_confidence')})"
+            
+            # Nombre de participants (sans la confiance dans l'export)
+            participants = str(a.get('sample_size', '')) if a.get('sample_size') else ''
+            
+            # Lien PubMed
+            pmid = a.get('pmid', '')
+            link = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else ''
+            
+            # Critère de Jugement Principal
+            cjp = a.get('primary_outcome', '')
+            
+            # Région (convertir le code en nom lisible)
+            region_code = a.get('region', '')
+            region_name = get_region_name(region_code) if region_code else ''
             
             ws.append([
-                a.get('pmid', ''), 
-                a.get('title', ''), 
-                a.get('authors', ''), 
-                a.get('journal', ''),
-                a.get('year', ''), 
-                a.get('study_type', ''), 
-                quality,  # Classification des revues (A+, A, B)
-                participants,
-                a.get('region', '')
+                a.get('title', ''),           # Titre article
+                link,                          # Lien
+                a.get('year', ''),            # Année publication
+                a.get('journal', ''),         # Journal
+                quality,                       # Rang (A+, A, B)
+                participants,                  # Nb de sujet
+                cjp,                          # CJP (Critère de Jugement Principal)
+                region_name                    # Region ou pays
             ])
     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
         wb.save(tmp.name)

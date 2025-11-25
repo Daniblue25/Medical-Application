@@ -1,6 +1,46 @@
-django==5.0.7
+# Core Django (Production-Ready)
+Django==5.0.7
 djangorestframework==3.15.2
+
+# Database & Connection Pooling
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Caching & Redis
+django-redis==5.4.0
+redis==5.0.1
+
+# CORS support
+django-cors-headers==4.3.0
+
+# Production Server & Static Files
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Environment & Configuration
 python-dotenv==1.0.1
+
+# Data Export
 openpyxl==3.1.2
 reportlab==4.2.2
+
+# API & HTTP Requests
 requests==2.32.3
+
+# NLP/Text Processing
+nltk==3.8.1
+
+# Build Tools
+pyinstaller==6.3.0
+
+# Optional: Error Tracking
+sentry-sdk==1.38.0
+
+# Packaging (standalone desktop builds)
+pyinstaller==6.3.0
+
+# Development Tools (optional)
+black==23.12.1
+flake8==6.1.0
+pytest==7.4.3
+pytest-django==4.7.0

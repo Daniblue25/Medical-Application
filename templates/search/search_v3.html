@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Medical Search Platform v3.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    {% load static %}
+    <script src="{% static 'vendor/tailwind.js' %}"></script>
+    
     <style>
         .sidebar {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -23,35 +24,47 @@
                 transform: translateY(0);
             }
         }
+        /* Bouton de fermeture toujours visible sur mobile */
+        @media (max-width: 768px) {
+            .close-article {
+                opacity: 1 !important;
+            }
+        }
+        /* Animation plus douce pour le hover du bouton de fermeture */
+        .close-article {
+            transition: all 0.2s ease;
+        }
+        .close-article:hover {
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
 <div class="flex h-screen overflow-hidden">
     <div class="sidebar bg-blue-900 text-white w-64 flex-shrink-0 transform -translate-x-full md:translate-x-0 fixed h-full z-40">
         <div class="p-4 flex items-center space-x-2 border-b border-blue-800">
-            <i class="fas fa-heartbeat text-2xl text-blue-300"></i>
-            <h1 class="text-xl font-bold">MedSearch v3.0</h1>
+            <button id="appTitle" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.0</button>
         </div>
         <nav class="p-4">
             <div class="mb-6">
                 <h2 class="text-xs uppercase tracking-wider text-blue-400 mb-2">Navigation</h2>
-                <span class="flex items-center space-x-2 py-2 px-3 rounded bg-blue-800 text-white"><i class="fas fa-search"></i><span>Recherche</span></span>
+                <span class="flex items-center space-x-2 py-2 px-3 rounded bg-blue-800 text-white"><span aria-hidden="true">🔎</span><span>Search</span></span>
             </div>
         </nav>
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-800">
             <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center"><i class="fas fa-user text-sm"></i></div>
-                <div><p class="text-sm font-medium">Dr. Researcher</p><p class="text-xs text-blue-300">Premium Member</p></div>
+                <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center"><span class="text-sm" aria-hidden="true">👤</span></div>
+                <div><p class="text-sm font-medium">We have to improve our search capabilities.</p><p class="text-xs text-blue-300">Dear Member</p></div>
             </div>
         </div>
     </div>
     <div class="md:hidden fixed bottom-4 right-4 z-50">
-        <button id="sidebarToggle" class="w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"><i class="fas fa-bars text-xl"></i></button>
+    <button id="sidebarToggle" class="w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"><span class="text-xl" aria-hidden="true">☰</span></button>
     </div>
     <div class="flex-1 overflow-auto bg-gray-50 md:pl-64">
         <header class="bg-white shadow-sm">
             <div class="px-4 py-3 flex justify-between items-center">
-                <div><h1 class="text-xl font-bold text-gray-800">Medical Literature Search</h1><p class="text-sm text-gray-500">Advanced PubMed analysis platform</p></div>
+                <div><h1 class="text-xl font-bold text-gray-800 flex items-center"><span class="mr-2" aria-hidden="true">🩺</span>Medical Literature Search</h1><p class="text-sm text-gray-500">Advanced PubMed analysis platform</p></div>
                 <div></div>
             </div>
         </header>
@@ -59,54 +72,63 @@
             <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-900">Search Parameters</h2>
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center"><span class="mr-2" aria-hidden="true"></span>Search Parameters</h2>
                         <p class="text-sm text-gray-500">Adjust filters to refine the medical literature dataset.</p>
                     </div>
                 </div>
                 <form id="searchForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Keywords</label>
-                        <input type="text" id="keywords" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter search terms..." />
-                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Keywords</label>
+                            <input type="text" id="keywords" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter search terms..." />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
+                            <select id="journalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="all">All</option>
+                                <option value="a">A</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Surgery Type</label><select id="surgeryType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">None (Any Topic)</option><option value="hepatic">Hepatic Surgery</option><option value="gastric">Gastric Surgery</option><option value="pancreatic">Pancreatic Surgery</option><option value="colorectal">Colorectal Surgery</option><option value="esophageal">Esophageal Surgery</option></select></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Study Type</label><select id="studyType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">Any Type</option><option value="randomized_controlled">Randomized Controlled Trial</option><option value="meta">Meta-analysis</option><option value="cohort">Cohort</option><option value="case_control">Case-control</option><option value="systematic_review">Systematic Review</option></select></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Time Period</label><select id="timePeriod" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="5">Last 5 Years</option><option value="10" selected>Last 10 Years</option><option value="20">Last 20 Years</option><option value="30">Last 30 Years</option><option value="50">Last 50 Years</option><option value="all">All years</option></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Journal Quality</label><select id="journalQuality" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="A+,A,B">A+, A & B Journals</option><option value="A+,A">A+ & A Journals</option><option value="A+">A+ Journals Only</option><option value="A">A Journals Only</option><option value="B">B Journals Only</option></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Page Size</label><select id="pageSize" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="50">50 per page</option><option value="100">100 per page</option><option value="200" selected>200 per page</option><option value="500">500 per page</option><option value="1000">1 000 per page</option><option value="5000">5 000 per page</option><option value="20000">20 000 per page</option></select></div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Page Size</label><select id="pageSize" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="50">50 per page</option><option value="100">100 per page</option><option value="200" selected>200 per page</option><option value="500">500 per page</option><option value="1000">1 000 per page</option><option value="5000">5 000 per page</option><option value="20000">20 000 per page</option></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Max Results</label><select id="maxResults" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="20000" selected>20 000 articles</option><option value="30000">30 000 articles</option><option value="40000">40 000 articles</option><option value="50000">50 000 articles</option></select></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Region Filter</label><select id="regionFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">Global (No Filter)</option><option value="north_america">North America</option><option value="europe">Europe</option><option value="asia">Asia</option><option value="africa">Africa</option><option value="south_america">South America</option><option value="oceania">Oceania</option></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Sample Size</label><select id="sampleSize" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">Any Size</option><option value="small">Small (<100)</option><option value="medium">Medium (100-1000)</option><option value="large">Large (>1000)</option></select></div>
                     </div>
                     <div class="flex justify-between pt-2">
-                        <button type="reset" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"><i class="fas fa-redo mr-2"></i> Reset</button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"><i class="fas fa-search mr-2"></i> Search PubMed</button>
+                        <button type="reset" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center"><span class="mr-2" aria-hidden="true">↺</span> Reset</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"><span class="mr-2" aria-hidden="true"></span> Search</button>
                     </div>
                 </form>
             </div>
             <div id="welcomeMessage" class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-100 p-8 text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-                    <i class="fas fa-search text-3xl text-blue-600"></i>
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4 text-3xl">
+                    <span aria-hidden="true">🔍</span>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-3">Bienvenue sur MedSearch v3.0</h2>
-                <p class="text-gray-600 mb-2">Plateforme de recherche d'articles scientifiques PubMed</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to MedSearch v3.0</h2>
+                <p class="text-gray-600 mb-2">High-Impact Medical & Surgical Literature Search Platform</p>
                 <p class="text-sm text-gray-500 max-w-2xl mx-auto mb-6">
-                    Tapez un mot-clé dans le champ ci-dessus (ex: "diabetes", "cancer", "hypertension") 
-                    puis cliquez sur <strong>"Search PubMed"</strong> pour obtenir de vrais articles scientifiques 
-                    avec leurs titres exacts, PMID, DOI et abstracts complets.
+                    Search across 13 top-tier medical and surgical journals including <strong>NEJM</strong>, <strong>Lancet</strong>, 
+                    <strong>JAMA</strong>, and <strong>British Journal of Surgery</strong>. Enter keywords above to retrieve 
+                    real scientific articles with verified data, complete abstracts, and geographic insights.
                 </p>
                 <div class="flex flex-wrap justify-center gap-2">
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Titres exacts PubMed</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ DOI vérifiés</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Abstracts complets</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Jusqu'à 20 000 résultats</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ 13 Top-Tier Journals</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Geographic Detection</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Complete Abstracts</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Up to 50K Results</span>
                 </div>
             </div>
             <!-- Progress Bar for Export -->
             <div id="exportProgressBar" class="hidden bg-white rounded-xl shadow-lg border border-blue-200 p-6">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
-                        <i class="fas fa-download text-blue-600 animate-bounce"></i>
+                        <span class="text-blue-600 animate-bounce" aria-hidden="true">⬇️</span>
                         <span class="text-sm font-medium text-gray-900" id="exportProgressText">Récupération des articles...</span>
                     </div>
                     <span class="text-sm font-semibold text-blue-600" id="exportProgressPercent">0%</span>
@@ -118,8 +140,8 @@
             </div>
             <div id="resultsSection" class="hidden space-y-6">
                 <div id="cacheAlert" class="hidden px-4 py-3 rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-700 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <span>Le cache applicatif est plein. Videz-le pour rafraîchir les résultats.</span>
-                    <button id="clearCacheBtn" class="self-start md:self-auto px-3 py-1.5 rounded-full border border-yellow-300 text-yellow-700 hover:bg-yellow-100 text-xs font-medium">Vider le cache</button>
+                    <span>Application cache is full. Clear it to refresh results.</span>
+                    <button id="clearCacheBtn" class="self-start md:self-auto px-3 py-1.5 rounded-full border border-yellow-300 text-yellow-700 hover:bg-yellow-100 text-xs font-medium">Clear cache</button>
                 </div>
                 <div id="statusMessage" class="hidden px-4 py-3 rounded-lg border text-sm"></div>
                 <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 flex flex-col gap-4">
@@ -130,14 +152,7 @@
                         </div>
                         <div class="flex items-center flex-wrap gap-3">
                             <span class="text-sm text-gray-500" id="resultCount">0 results</span>
-                            <div class="flex items-center space-x-2 relative">
-                                <button id="exportBtn" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm hover:bg-green-200 flex items-center"><i class="fas fa-file-export mr-1"></i> Export</button>
-                                <div id="exportDropdown" class="hidden absolute top-10 right-0 z-10 bg-white shadow-lg rounded-md p-2 w-40">
-                                    <button data-type="excel" class="block w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100">Excel</button>
-                                    <button data-type="pdf" class="block w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100">PDF</button>
-                                    <button data-type="json" class="block w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100">JSON</button>
-                                </div>
-                            </div>
+                            <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center shadow-sm"><span class="mr-2" aria-hidden="true"></span> Export</button>
                         </div>
                     </div>
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-sm text-gray-500">
@@ -150,7 +165,7 @@
                             <button id="lastPageBtn" class="px-3 py-1 rounded-full border border-gray-200 hover:bg-gray-100">»</button>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button id="clearSavedBtn" class="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50">Supprimer les sauvegardes</button>
+                            <button id="clearSavedBtn" class="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50">Delete saved</button>
                             <span id="savedCount" class="text-xs text-gray-500 hidden"></span>
                         </div>
                     </div>
@@ -158,25 +173,16 @@
                 <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                     <div class="p-6 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div class="flex items-center flex-wrap gap-4">
-                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fas fa-chart-pie"></i></span><div><p class="text-sm font-medium text-gray-800">Analytics</p><p class="text-xs text-gray-500">Real-time overview</p></div></div>
-                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600"><i class="fas fa-map-marked-alt"></i></span><div><p class="text-sm font-medium text-gray-800">Geographic</p><p class="text-xs text-gray-500">Regional insights</p></div></div>
-                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600"><i class="fas fa-calendar-alt"></i></span><div><p class="text-sm font-medium text-gray-800">Timeline</p><p class="text-xs text-gray-500">Temporal trends</p></div></div>
+                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg" aria-hidden="true">📊</span><div><p class="text-sm font-medium text-gray-800">Analytics</p><p class="text-xs text-gray-500">Real-time overview</p></div></div>
+                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg" aria-hidden="true">🗺️</span><div><p class="text-sm font-medium text-gray-800">Geographic</p><p class="text-xs text-gray-500">Regional insights</p></div></div>
                         </div>
                     </div>
 
                     
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6" id="chartsWrapper" hidden>
+                    <div class="p-6" id="chartsWrapper" hidden>
                         <div class="chart-container bg-gray-50 rounded-xl p-4">
                             <div class="flex justify-between items-center mb-2"><h3 class="text-sm font-medium text-gray-700">Publications by Year</h3></div>
                             <div class="h-44 bg-white rounded-lg p-3"><canvas id="yearChart"></canvas></div>
-                        </div>
-                        <div class="chart-container bg-gray-50 rounded-xl p-4">
-                            <div class="flex justify-between items-center mb-2"><h3 class="text-sm font-medium text-gray-700">Study Types</h3></div>
-                            <div class="h-44 bg-white rounded-lg p-3"><canvas id="typeChart"></canvas></div>
-                        </div>
-                        <div class="chart-container bg-gray-50 rounded-xl p-4">
-                            <div class="flex justify-between items-center mb-2"><h3 class="text-sm font-medium text-gray-700">Classification des Revues</h3></div>
-                            <div class="h-44 bg-white rounded-lg p-3"><canvas id="journalRankingChart"></canvas></div>
                         </div>
                     </div>
                 </div>
@@ -184,7 +190,7 @@
                     <div id="resultsGrid" class="space-y-4 p-4 md:p-6"></div>
                 </div>
                 <div id="emptyState" class="hidden bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center text-gray-500">
-                    <i class="fas fa-search text-3xl text-blue-400 mb-3"></i>
+                    <span class="text-3xl text-blue-400 mb-3" aria-hidden="true">🔎</span>
                     <h3 class="text-lg font-semibold text-gray-800 mb-1">No studies found</h3>
                     <p class="text-sm">Try adjusting your filters or keywords to broaden the search.</p>
                 </div>
@@ -206,11 +212,34 @@
                     <p class="text-sm text-gray-500 mt-1" id="modalAuthors">Authors</p>
                     <p class="text-sm text-gray-500" id="modalJournal">Journal, Year</p>
                 </div>
-                <button id="closeModal" class="text-gray-400 hover:text-gray-500"><i class="fas fa-times"></i></button>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-500" aria-label="Close">×</button>
             </div>
             <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="col-span-2">
                     <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Abstract</h4><p class="text-gray-700" id="modalAbstract">Abstract text...</p></div>
+                    
+                    <!-- ✨ NEW: Primary outcome section only -->
+                    <div class="bg-purple-50 p-4 rounded-lg mb-4" id="modalOutcomesSection">
+                        <h4 class="font-medium text-purple-900 mb-3 flex items-center gap-2">
+                            <span aria-hidden="true">🎯</span>
+                            Primary outcome automatically extracted
+                        </h4>
+                        <div id="modalPrimaryOutcome" class="hidden">
+                            <div class="flex items-start gap-2 mb-1">
+                                <span class="mt-0.5" aria-hidden="true">⭐</span>
+                                <p class="text-xs font-semibold text-purple-800">Primary outcome</p>
+                                <span id="modalPrimaryConfidence" class="ml-auto text-xs"></span>
+                            </div>
+                            <p class="text-sm text-gray-700 bg-white p-3 rounded ml-6" id="modalPrimaryOutcomeText"></p>
+                        </div>
+                        <div id="modalNoOutcomes" class="hidden">
+                            <p class="text-sm text-gray-500 italic flex items-center gap-2">
+                                <span aria-hidden="true">ℹ️</span>
+                                No primary outcome automatically identified in this abstract.
+                            </p>
+                        </div>
+                    </div>
+                    
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div><h4 class="font-medium text-gray-800 mb-1">Study Type</h4><p class="text-gray-700" id="modalStudyType"></p></div>
                         <div><h4 class="font-medium text-gray-800 mb-1">Sample Size</h4><p class="text-gray-700" id="modalSampleSize"></p></div>
@@ -220,23 +249,32 @@
                 </div>
                 <div>
                     <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Quality Assessment</h4><div class="flex items-center mb-2"><div class="w-3/4 bg-gray-200 rounded-full h-2.5 mr-2"><div class="bg-green-500 h-2.5 rounded-full" style="width: 85%"></div></div><span class="text-sm font-medium text-gray-700">85%</span></div><p class="text-sm text-gray-600">Auto-generated quality approximation</p></div>
-                    <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Geographic Data</h4><div class="flex items-center mb-1"><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i><span class="text-gray-700" id="modalCountry">—</span></div><div class="flex items-center"><i class="fas fa-university text-blue-500 mr-2"></i><span class="text-gray-700" id="modalInstitution">—</span></div></div>
-                    <div class="bg-gray-50 p-4 rounded-lg"><h4 class="font-medium text-gray-800 mb-2">Actions</h4><button class="w-full mb-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center" id="viewPubmed"><i class="fas fa-external-link-alt mr-2"></i> View on PubMed</button><button class="w-full px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 flex items-center justify-center" id="saveArticleBtn"><i class="fas fa-bookmark mr-2"></i> Sauvegarder</button></div>
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Geographic Data</h4><div class="flex items-center mb-1"><span class="mr-2" aria-hidden="true">📍</span><span class="text-gray-700" id="modalCountry">—</span></div><div class="flex items-center"><span class="mr-2" aria-hidden="true">🏛️</span><span class="text-gray-700" id="modalInstitution">—</span></div></div>
+                    <div class="bg-gray-50 p-4 rounded-lg"><h4 class="font-medium text-gray-800 mb-2">Actions</h4><button class="w-full mb-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center" id="viewPubmed"><span class="mr-2" aria-hidden="true">🔗</span> View on PubMed</button><button class="w-full px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 flex items-center justify-center" id="saveArticleBtn"><span class="mr-2" aria-hidden="true">🔖</span> Save</button></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% load static %}
+<script src="{% static 'vendor/chart.min.js' %}"></script>
 <script>
 const STORAGE_KEY = 'medSearchSavedArticles';
 const numberFormatter = new Intl.NumberFormat('en-US');
+
+// Mapping des types de chirurgie vers leurs mots-clés PubMed
+const SURGERY_KEYWORDS = {
+    'hepatic': ['Hepatectomy', 'liver surgery', 'hepatic resection', 'hepatic surgery'],
+    'gastric': ['Gastric surgery', 'gastrectomy'],
+    'pancreatic': ['Pancreatic surgery', 'pancreatectomy', 'distal pancreatectomy', 'cephalic duodenopancreatectomy', 'total pancreatectomy'],
+    'colorectal': ['Colorectal surgery', 'colorectal cancer surgery'],
+    'esophageal': ['Oesophagectomy', 'oesophageal surgery', 'Esophagectomy', 'esophageal surgery']
+};
 
 const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebar = document.querySelector('.sidebar');
 const elements = {
     exportBtn: document.getElementById('exportBtn'),
-    exportDropdown: document.getElementById('exportDropdown'),
     searchForm: document.getElementById('searchForm'),
     loadingState: document.getElementById('loadingState'),
     resultsSection: document.getElementById('resultsSection'),
@@ -254,6 +292,7 @@ const elements = {
     nextPageBtn: document.getElementById('nextPageBtn'),
     lastPageBtn: document.getElementById('lastPageBtn'),
     pageSizeSelect: document.getElementById('pageSize'),
+    maxResultsSelect: document.getElementById('maxResults'),
     clearSavedBtn: document.getElementById('clearSavedBtn'),
     savedCount: document.getElementById('savedCount'),
     modal: document.getElementById('articleModal'),
@@ -278,24 +317,13 @@ const state = {
         returned: 0
     },
     saved: new Set(loadSavedArticles()),
+    hidden: new Set(), // Articles cachés via le bouton X
     currentArticle: null,
     chartInstances: { year: null, type: null, quality: null }
 };
 
 if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('translate-x-0'));
-}
-
-if (elements.exportBtn && elements.exportDropdown) {
-    elements.exportBtn.addEventListener('click', event => {
-        event.stopPropagation();
-        elements.exportDropdown.classList.toggle('hidden');
-    });
-    document.addEventListener('click', event => {
-        if (!elements.exportDropdown.contains(event.target) && event.target !== elements.exportBtn) {
-            elements.exportDropdown.classList.add('hidden');
-        }
-    });
 }
 
 function loadSavedArticles() {
@@ -327,7 +355,7 @@ function persistSaved() {
 function updateSavedCount() {
     if (!elements.savedCount) return;
     const count = state.saved.size;
-    elements.savedCount.textContent = count ? `${count} sauvegarde${count > 1 ? 's' : ''}` : '';
+    elements.savedCount.textContent = count ? `${count} saved` : '';
     elements.savedCount.classList.toggle('hidden', count === 0);
 }
 
@@ -347,7 +375,7 @@ function updateSavedIndicators() {
 function updateModalSaveState() {
     if (!elements.saveArticleBtn) return;
     const saved = isArticleSaved(state.currentArticle);
-    elements.saveArticleBtn.innerHTML = `<i class="fas fa-bookmark mr-2"></i>${saved ? 'Enregistré' : 'Sauvegarder'}`;
+    elements.saveArticleBtn.innerHTML = `<span class="mr-2" aria-hidden="true">🔖</span>${saved ? 'Saved' : 'Save'}`;
     elements.saveArticleBtn.classList.toggle('bg-gray-200', !saved);
     elements.saveArticleBtn.classList.toggle('bg-yellow-100', saved);
     elements.saveArticleBtn.classList.toggle('text-gray-700', !saved);
@@ -360,10 +388,10 @@ function toggleSave(article) {
     if (!key) return;
     if (state.saved.has(key)) {
         state.saved.delete(key);
-        showStatus('Article retiré des sauvegardes.', 'info');
+        showStatus('Article removed from saved.', 'info');
     } else {
         state.saved.add(key);
-        showStatus('Article ajouté aux sauvegardes.', 'success');
+        showStatus('Article added to saved.', 'success');
     }
     persistSaved();
 }
@@ -386,6 +414,18 @@ function clearStatus() {
     elements.statusBanner?.classList.add('hidden');
 }
 
+function getRegionName(regionCode) {
+    const regionNames = {
+        'north_america': 'North America',
+        'europe': 'Europe',
+        'asia': 'Asia',
+        'africa': 'Africa',
+        'south_america': 'South America',
+        'oceania': 'Oceania',
+    };
+    return regionNames[regionCode] || 'Global';
+}
+
 function toggleEmptyState(hasResults) {
     elements.emptyState?.classList.toggle('hidden', hasResults);
     elements.resultsContainer?.classList.toggle('hidden', !hasResults);
@@ -401,17 +441,37 @@ function setLoading(isLoading) {
 
 function getFormPayload() {
     const pageSize = parseInt(elements.pageSizeSelect?.value, 10) || state.pagination.pageSize;
+    const maxResults = parseInt(elements.maxResultsSelect?.value, 10) || 20000;
     state.pagination.pageSize = pageSize;
+    
+    // Récupérer les mots-clés de base
+    let keywords = document.getElementById('keywords').value.trim();
+    
+    // Ajouter les mots-clés chirurgicaux si un type est sélectionné
+    const surgeryType = document.getElementById('surgeryType').value;
+    if (surgeryType && SURGERY_KEYWORDS[surgeryType]) {
+        const surgeryKeywords = SURGERY_KEYWORDS[surgeryType].join(' OR ');
+        // Combiner avec les keywords existants
+        if (keywords) {
+            keywords = `(${keywords}) AND (${surgeryKeywords})`;
+        } else {
+            keywords = surgeryKeywords;
+        }
+    }
+    
+    const journalRank = document.getElementById('journalRank').value;
+    
     return {
-        keywords: document.getElementById('keywords').value,
+        keywords: keywords,
         studyType: document.getElementById('studyType').value,
         timePeriod: document.getElementById('timePeriod').value,
-        journalQuality: document.getElementById('journalQuality').value,
+        journalFilter: '', // Search in all 13 target journals by default
         regionFilter: document.getElementById('regionFilter').value,
-        sampleSize: document.getElementById('sampleSize').value,
+        surgeryType: surgeryType, // Ajout pour tracking
+        journalRank: journalRank, // A pour top 13 revues, all pour toutes
         page: state.pagination.page,
         pageSize,
-        maxResults: 20000
+        maxResults
     };
 }
 
@@ -444,24 +504,32 @@ function updatePagination(meta) {
 
     if (elements.paginationSummary) {
         elements.paginationSummary.textContent = total
-            ? `Affichage ${startIndex}-${endIndex} sur ${total} articles`
-            : 'Aucun article pour le moment';
+            ? `Showing ${startIndex}-${endIndex} of ${total} articles`
+            : 'No articles yet';
     }
 
     if (elements.pageIndicator) {
-        elements.pageIndicator.textContent = pageCount > 0 ? `Page ${page} sur ${pageCount}` : 'Page 1';
+        elements.pageIndicator.textContent = pageCount > 0 ? `Page ${page} of ${pageCount}` : 'Page 1';
     }
 
     if (elements.resultCount) {
         elements.resultCount.textContent = total
-            ? `${returned} affiché${returned > 1 ? 's' : ''} · ${total} au total`
-            : '0 résultat';
+            ? `${returned} displayed · ${total} total`
+            : '0 result';
     }
 
     setButtonDisabled(elements.firstPageBtn, page <= 1);
     setButtonDisabled(elements.prevPageBtn, page <= 1);
     setButtonDisabled(elements.nextPageBtn, page >= pageCount);
     setButtonDisabled(elements.lastPageBtn, page >= pageCount);
+}
+
+// Fonction pour obtenir les articles visibles (non cachés)
+function getVisibleArticles(articles) {
+    return articles.filter(article => {
+        const key = articleKey(article);
+        return !state.hidden.has(key);
+    });
 }
 
 function renderResults(data) {
@@ -521,32 +589,44 @@ function renderResults(data) {
         const impact = typeof article.impact_factor === 'number' ? article.impact_factor.toFixed(1) : (article.impact_factor || 'N/A');
         const card = document.createElement('article');
         card.dataset.articleKey = key;
-        card.className = 'group bg-white border border-gray-100 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer';
+        card.className = 'group bg-white border border-gray-100 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer relative';
         card.innerHTML = `
+            <button class="close-article absolute top-4 right-4 w-8 h-8 rounded-full bg-white border border-gray-200 hover:bg-red-50 hover:border-red-300 text-gray-600 hover:text-red-600 flex items-center justify-center transition-all z-10 shadow-sm text-base font-bold" title="Remove this article" aria-label="Remove article">
+                ×
+            </button>
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="space-y-3">
                     <div class="flex items-start gap-3">
-                        <span class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fas fa-flask"></i></span>
                         <div>
                             <h3 class="text-base font-semibold text-gray-900 leading-snug">${article.title || 'Untitled study'}</h3>
                             <p class="text-sm text-gray-500">${article.authors || 'Unknown authors'}</p>
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs">
-                        <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700">${article.journal || 'Unknown journal'}</span>
-                        <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600">${article.year || 'N/A'}</span>
-                        <span class="px-3 py-1 rounded-full ${getJournalRanking(article.journal) === 'A+' ? 'bg-green-50 text-green-700' : getJournalRanking(article.journal) === 'A' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-700'}">Revue ${getJournalRanking(article.journal)}</span>
-                        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600">${article.study_type || 'Unknown type'}</span>
+                        <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1"><span aria-hidden="true">📅</span><span>${article.year || 'N/A'}</span></span>
+                        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 flex items-center gap-1"><span aria-hidden="true">🧪</span><span>${article.study_type || 'Unknown type'}</span></span>
                         <span class="saved-badge px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 hidden">Saved</span>
+                        ${article.has_outcomes ? `<span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 flex items-center gap-1" title="Primary outcome automatically extracted"><span aria-hidden="true">🎯</span><span>Outcome extracted</span></span>` : ''}
                     </div>
+                    ${article.outcome_summary ? `
+                        <div class="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 mt-1 text-sm" aria-hidden="true">🎯</span>
+                                <div>
+                                    <p class="text-xs font-semibold text-purple-900 mb-1">Primary outcome identified:</p>
+                                    <p class="text-xs text-purple-800 leading-relaxed">${article.outcome_summary}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="flex items-center gap-4 self-start md:self-center">
                     <div class="text-right">
                         <div class="flex items-center justify-end gap-2 text-sm font-medium text-gray-700">
-                            <i class="fas fa-users text-blue-500 text-xs"></i>
+                            <span class="text-blue-500 text-xs" aria-hidden="true">👥</span>
                             <span>${sampleSizeHtml}</span>
                         </div>
-                        <p class="text-xs text-gray-500">${article.region || 'Global'} • Impact ${impact}</p>
+                        <p class="text-xs text-gray-500">${getRegionName(article.region)}</p>
                     </div>
                     <button class="view-article px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">Details</button>
                 </div>
@@ -554,6 +634,8 @@ function renderResults(data) {
         `;
         const openModal = () => showArticleModal(article);
         card.addEventListener('click', openModal);
+        
+        // Bouton "Details"
         const viewBtn = card.querySelector('.view-article');
         if (viewBtn) {
             viewBtn.addEventListener('click', event => {
@@ -561,6 +643,33 @@ function renderResults(data) {
                 openModal();
             });
         }
+        
+        // Bouton de fermeture (X)
+        const closeBtn = card.querySelector('.close-article');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', event => {
+                event.stopPropagation();
+                
+                // Ajouter l'article au Set des articles cachés
+                state.hidden.add(key);
+                console.log('[Close] Article caché:', article.title, '| Total cachés:', state.hidden.size);
+                
+                // Animation de fermeture
+                card.style.transition = 'all 0.3s ease-out';
+                card.style.transform = 'translateX(100%)';
+                card.style.opacity = '0';
+                
+                // Suppression après l'animation
+                setTimeout(() => {
+                    card.remove();
+                    // Vérifier s'il reste des articles
+                    if (elements.resultsGrid.children.length === 0) {
+                        toggleEmptyState(false);
+                    }
+                }, 300);
+            });
+        }
+        
         elements.resultsGrid.appendChild(card);
     });
 
@@ -581,10 +690,10 @@ function showArticleModal(article) {
     if (typeof article.sample_size === 'number') {
         const confidence = article.sample_size_confidence || 'unknown';
         const confidenceLabels = {
-            'high': 'Haute confiance',
-            'medium': 'Confiance moyenne', 
-            'low': 'Faible confiance',
-            'unknown': 'Confiance inconnue'
+            'high': 'High confidence',
+            'medium': 'Medium confidence', 
+            'low': 'Low confidence',
+            'unknown': 'Unknown confidence'
         };
         
         modalSampleEl.innerHTML = `
@@ -605,7 +714,7 @@ function showArticleModal(article) {
         modalSampleEl.textContent = 'Non spécifié';
     }
     document.getElementById('modalEvidence').textContent = `Classification: Revue ${getJournalRanking(article.journal)}`;
-    document.getElementById('modalCountry').textContent = article.region || '—';
+    document.getElementById('modalCountry').textContent = getRegionName(article.region);
     document.getElementById('modalInstitution').textContent = article.journal || '—';
 
     const doiEl = document.getElementById('modalDOI');
@@ -621,6 +730,37 @@ function showArticleModal(article) {
         elements.viewPubmedBtn.onclick = () => {
             if (article.pmid) window.open(`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`, '_blank');
         };
+    }
+
+    // ✨ NEW: Display primary outcome only
+    const getConfidenceBadge = (confidence) => {
+        const badges = {
+            'high': { color: 'text-green-600', bg: 'bg-green-50', icon: 'fa-check-circle', label: 'High confidence' },
+            'medium': { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: 'fa-exclamation-circle', label: 'Medium confidence' },
+            'low': { color: 'text-orange-600', bg: 'bg-orange-50', icon: 'fa-question-circle', label: 'Low confidence' }
+        };
+        const badge = badges[confidence] || badges['low'];
+        return `<span class="px-2 py-1 rounded-full ${badge.bg} ${badge.color} text-xs flex items-center gap-1">
+            <span aria-hidden="true">${confidence === 'high' ? '✅' : confidence === 'medium' ? '⚠️' : '❓'}</span>${badge.label}
+        </span>`;
+    };
+    
+    // Display primary outcome
+    const primaryOutcomeContainer = document.getElementById('modalPrimaryOutcome');
+    const primaryOutcomeText = document.getElementById('modalPrimaryOutcomeText');
+    const primaryConfidenceEl = document.getElementById('modalPrimaryConfidence');
+    const noOutcomesMsg = document.getElementById('modalNoOutcomes');
+    
+    if (article.primary_outcome) {
+        primaryOutcomeContainer.classList.remove('hidden');
+        primaryOutcomeText.textContent = article.primary_outcome;
+        if (article.primary_outcome_confidence && primaryConfidenceEl) {
+            primaryConfidenceEl.innerHTML = getConfidenceBadge(article.primary_outcome_confidence);
+        }
+        noOutcomesMsg.classList.add('hidden');
+    } else {
+        primaryOutcomeContainer.classList.add('hidden');
+        noOutcomesMsg.classList.remove('hidden');
     }
 
     updateModalSaveState();
@@ -690,24 +830,15 @@ function updateCharts(data) {
     }
 
     const yearsCount = {};
-    const typeCount = {};
-    const journalRankingCount = { 'A+': 0, 'A': 0, 'B': 0 };
     
     data.forEach(article => {
         yearsCount[article.year] = (yearsCount[article.year] || 0) + 1;
-        typeCount[article.study_type] = (typeCount[article.study_type] || 0) + 1;
-        
-        // Classification des revues
-        const ranking = getJournalRanking(article.journal || '');
-        journalRankingCount[ranking]++;
     });
 
     destroyCharts();
     chartsWrapper.hidden = false;
 
     const yearCtx = document.getElementById('yearChart')?.getContext('2d');
-    const typeCtx = document.getElementById('typeChart')?.getContext('2d');
-    const journalRankingCtx = document.getElementById('journalRankingChart')?.getContext('2d');
 
     if (yearCtx) {
         state.chartInstances.year = new Chart(yearCtx, {
@@ -726,65 +857,6 @@ function updateCharts(data) {
             options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
         });
     }
-
-    if (typeCtx) {
-        state.chartInstances.type = new Chart(typeCtx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(typeCount),
-                datasets: [{
-                    data: Object.values(typeCount),
-                    backgroundColor: ['rgba(59,130,246,.85)','rgba(16,185,129,.85)','rgba(245,158,11,.85)','rgba(139,92,246,.85)','rgba(156,163,175,.85)'],
-                    borderWidth: 0
-                }]
-            },
-            options: { plugins: { legend: { display: false } }, cutout: '65%', responsive: true, maintainAspectRatio: false }
-        });
-    }
-
-    if (journalRankingCtx) {
-        state.chartInstances.journalRanking = new Chart(journalRankingCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Revues A+', 'Revues A', 'Revues B'],
-                datasets: [{
-                    data: [journalRankingCount['A+'], journalRankingCount['A'], journalRankingCount['B']],
-                    backgroundColor: [
-                        'rgba(34,197,94,0.9)',   // A+ - vert foncé
-                        'rgba(59,130,246,0.9)',  // A - bleu
-                        'rgba(156,163,175,0.9)'  // B - gris
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                plugins: { 
-                    legend: { 
-                        display: true,
-                        position: 'bottom',
-                        labels: {
-                            padding: 10,
-                            usePointStyle: true,
-                            font: { size: 11 }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = journalRankingCount['A+'] + journalRankingCount['A'] + journalRankingCount['B'];
-                                const percentage = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
-                                return `${context.label}: ${context.parsed} (${percentage}%)`;
-                            }
-                        }
-                    }
-                },
-                cutout: '60%', 
-                responsive: true, 
-                maintainAspectRatio: false
-            }
-        });
-    }
 }
 
 async function performSearch({ page } = {}) {
@@ -795,8 +867,14 @@ async function performSearch({ page } = {}) {
     payload.page = state.pagination.page;
     payload.pageSize = state.pagination.pageSize;
     
-    // Sauvegarder les paramètres pour l'export complet
+    // Save parameters for full export
     state.lastSearchParams = { ...payload };
+    
+    // Réinitialiser les articles cachés lors d'une nouvelle recherche (page 1)
+    if (state.pagination.page === 1) {
+        state.hidden.clear();
+        console.log('[Search] Articles cachés réinitialisés pour nouvelle recherche');
+    }
 
     // Cacher le message de bienvenue
     const welcomeMsg = document.getElementById('welcomeMessage');
@@ -1012,26 +1090,10 @@ function resetExportProgress() {
     }
 }
 
-if (elements.exportDropdown) {
-    elements.exportDropdown.querySelectorAll('button[data-type]').forEach(button => button.addEventListener('click', async event => {
-        event.stopPropagation();
-        elements.exportDropdown.classList.add('hidden');
+if (elements.exportBtn) {
+    elements.exportBtn.addEventListener('click', async () => {
         if (!state.results.length) {
             showStatus('No results to export yet.', 'warning');
-            return;
-        }
-        const type = button.dataset.type;
-        if (type === 'json') {
-            const blob = new Blob([JSON.stringify(state.results, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'medical_search_results.json';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            showStatus('JSON export downloaded.', 'success');
             return;
         }
 
@@ -1070,27 +1132,32 @@ if (elements.exportDropdown) {
                 articlesCount: allResultsData.data?.length
             });
             
-            const allArticles = allResultsData.data || [];
+            // Filtrer les articles cachés
+            const allArticles = getVisibleArticles(allResultsData.data || []);
+            console.log('[Export] Articles après filtrage:', {
+                total: allResultsData.data?.length || 0,
+                visibles: allArticles.length,
+                cachés: state.hidden.size
+            });
             
             if (allArticles.length === 0) {
                 hideExportProgress();
-                showStatus('⚠️ Aucun article à exporter', 'warning');
+                showStatus('⚠️ Aucun article visible à exporter (tous les articles sont cachés)', 'warning');
                 return;
             }
             
             // Étape 2: Ajouter la classification des revues (60-75%)
-            updateExportProgress(70, 100, `Classification de ${allArticles.length} revues...`);
+            updateExportProgress(70, 100, `Classification de ${allArticles.length} revues visibles...`);
             
             const articlesWithRanking = allArticles.map(article => ({
                 ...article,
                 quality: getJournalRanking(article.journal || '')
             }));
             
-            // Étape 3: Générer le fichier d'export (75-95%)
-            updateExportProgress(80, 100, `Génération du fichier ${type.toUpperCase()}...`);
+            // Étape 3: Générer le fichier Excel (75-95%)
+            updateExportProgress(80, 100, 'Génération du fichier Excel...');
             
-            const endpoint = type === 'excel' ? '/export/excel' : '/export/pdf';
-            const exportResponse = await fetch(endpoint, {
+            const exportResponse = await fetch('/export/excel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ articles: articlesWithRanking })
@@ -1107,25 +1174,28 @@ if (elements.exportDropdown) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = type === 'excel' ? 
-                `medical_search_complete_${allArticles.length}articles.xlsx` : 
-                `medical_search_complete_${allArticles.length}articles.pdf`;
+            link.download = `medical_search_complete_${allArticles.length}articles.xlsx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             
-            // Étape finale (100%)
-            updateExportProgress(100, 100, '✅ Export terminé avec succès !');
+            // Final step (100%)
+            updateExportProgress(100, 100, 'Export completed successfully!');
+            
+            const hiddenCount = state.hidden.size;
+            const statusMsg = hiddenCount > 0 
+                ? `Export successful: ${allArticles.length} visible article(s) exported (${hiddenCount} hidden excluded)` 
+                : `Export successful: ${allArticles.length} article(s) exported to Excel`;
             
             setTimeout(() => hideExportProgress(), 2000);
-            showStatus(`✅ Export réussi: ${allArticles.length} articles exportés en ${type.toUpperCase()}`, 'success');
+            showStatus(statusMsg, 'success');
         } catch (error) {
             console.error('[Export Error]', error);
             hideExportProgress();
-            showStatus('❌ Erreur lors de l\'export. Veuillez réessayer.', 'error');
+            showStatus('Error during export. Please try again.', 'error');
         }
-    }));
+    });
 }
 
 if (elements.closeModalBtn && elements.modal) {
@@ -1144,6 +1214,14 @@ window.addEventListener('load', () => {
     // Ne pas charger les données mock au démarrage
     // loadInitialData();
     console.log('✓ Application prête. Tapez un mot-clé et cliquez "Search PubMed" pour obtenir de vraies données.');
+    // Refresh page when clicking the app title in sidebar
+    const appTitleBtn = document.getElementById('appTitle');
+    if (appTitleBtn) {
+        appTitleBtn.addEventListener('click', () => {
+            // Soft reload to keep cache but re-init UI
+            window.location.reload();
+        });
+    }
 });
 </script>
 </body>

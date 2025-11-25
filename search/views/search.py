@@ -15,15 +15,15 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 def search_api(request):
     data = request.data or {}
-    max_input = data.get('max_results') or data.get('maxResults') or 200
+    max_input = data.get('max_results') or data.get('maxResults') or 20000
     page_input = data.get('page') or data.get('pageNumber') or 1
     page_size_input = data.get('page_size') or data.get('pageSize') or max_input
     try:
-        page_size = max(1, min(int(page_size_input), 20000))
+        page_size = max(1, min(int(page_size_input), 50000))
     except (TypeError, ValueError):
         page_size = 200
     try:
-        max_results = max(1, min(int(max_input), 20000))
+        max_results = max(1, min(int(max_input), 50000))
     except (TypeError, ValueError):
         max_results = 20000
     try:
@@ -36,10 +36,19 @@ def search_api(request):
     if cached:
         return Response({"status": "success", "cached": True, **cached})
     
+    # Gérer le filtre de rang de revue
+    journal_rank = data.get('journalRank', 'all')
+    if journal_rank == 'a':
+        # Utiliser les 13 revues de rang A
+        journal_filter = ''  # Chaîne vide = filtre sur les 13 revues cibles
+    else:
+        # 'all' = rechercher dans toutes les revues PubMed
+        journal_filter = 'no_filter'  # Valeur spéciale pour désactiver le filtre
+    
     filters = dict(
         keywords=data.get('keywords', data.get('query', '')),
         study_type=data.get('studyType', ''),
-        journal_quality=data.get('journalQuality', ''),
+        journal_filter=journal_filter,
         region=data.get('regionFilter', ''),
         time_period=data.get('timePeriod', '10'),
         sample_size=data.get('sampleSize', '')
@@ -55,7 +64,8 @@ def search_api(request):
             start=start_index,
             size=min(page_size, 200),
             study_type=filters['study_type'],
-            time_period=filters['time_period']
+            time_period=filters['time_period'],
+            journal_filter=filters['journal_filter']
         )
         total_available = min(total_count, max_results)
         effective_page_size = min(page_size, max_results, 200)
@@ -91,11 +101,20 @@ def export_all_results(request):
     """
     data = request.data or {}
     
+    # Gérer le filtre de rang de revue
+    journal_rank = data.get('journalRank', 'all')
+    if journal_rank == 'a':
+        # Utiliser les 13 revues de rang A
+        journal_filter = ''  # Chaîne vide = filtre sur les 13 revues cibles
+    else:
+        # 'all' = rechercher dans toutes les revues PubMed
+        journal_filter = 'no_filter'  # Valeur spéciale pour désactiver le filtre
+    
     # Récupérer les paramètres de recherche originaux
     filters = dict(
         keywords=data.get('keywords', data.get('query', '')),
         study_type=data.get('studyType', ''),
-        journal_quality=data.get('journalQuality', ''),
+        journal_filter=journal_filter,
         region=data.get('regionFilter', ''),
         time_period=data.get('timePeriod', '10'),
         sample_size=data.get('sampleSize', '')
@@ -114,7 +133,8 @@ def export_all_results(request):
             start=0,
             size=BATCH_SIZE,
             study_type=filters['study_type'],
-            time_period=filters['time_period']
+            time_period=filters['time_period'],
+            journal_filter=filters['journal_filter']
         )
         
         all_articles = first_batch
@@ -140,7 +160,8 @@ def export_all_results(request):
                         start=start_index,
                         size=BATCH_SIZE,
                         study_type=filters['study_type'],
-                        time_period=filters['time_period']
+                        time_period=filters['time_period'],
+                        journal_filter=filters['journal_filter']
                     )
                     all_articles.extend(batch_articles)
                     logger.info(f"Export: Retrieved {len(batch_articles)} articles in batch {batch_num + 1}")

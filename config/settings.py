@@ -1,9 +1,17 @@
 import os
+import warnings
+from importlib.util import find_spec
 from pathlib import Path
 from dotenv import load_dotenv
 
+HAS_WHITENOISE = find_spec('whitenoise') is not None
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
+
+# Ensure logs directory exists
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-insecure-key')
 DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
@@ -28,7 +36,21 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Security middleware
+    'config.middleware.SecurityHeadersMiddleware',
+    'config.middleware.RateLimitMiddleware',
+    'config.middleware.LoggingMiddleware',
+    'config.middleware.ProxyCompatibilityMiddleware',
 ]
+
+if HAS_WHITENOISE:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+else:
+    warnings.warn(
+        'Whitenoise is not installed; static files will be served by Django. '
+        'Install whitenoise for production deployments.',
+        RuntimeWarning,
+    )
 
 ROOT_URLCONF = 'config.urls'
 
@@ -69,6 +91,9 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+if HAS_WHITENOISE:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CACHES = {
@@ -84,3 +109,140 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
     'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser']
 }
+
+# ============================================================================
+# SECURITY CONFIGURATION (from config/security.py)
+# ============================================================================
+
+# HTTPS/SSL Configuration
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'false').lower() == 'true'
+SESSION_COOKIE_SECURE = os.getenv('SECURE_SSL_REDIRECT', 'false').lower() == 'true'
+CSRF_COOKIE_SECURE = os.getenv('SECURE_SSL_REDIRECT', 'false').lower() == 'true'
+
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = [h for h in os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',') if h]
+
+# Rate limiting configuration (no authentication needed)
+RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'true').lower() == 'true'
+RATELIMIT_RATE = os.getenv('RATELIMIT_RATE', '200/h')  # 200 requests per hour
+RATELIMIT_INTERVAL = int(os.getenv('RATELIMIT_INTERVAL', '3600'))  # 1 hour
+RATELIMIT_BURST = int(os.getenv('RATELIMIT_BURST', '4'))  # 4 requests
+RATELIMIT_BURST_WINDOW = int(os.getenv('RATELIMIT_BURST_WINDOW', '60'))  # 60 seconds
+
+# Security headers
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+X_FRAME_OPTIONS = 'DENY'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'app.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'security.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'search': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'api': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Cache configuration for production
+if not DEBUG:
+    # Use Redis in production for distributed caching
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 50,
+                    'retry_on_timeout': True,
+                },
+                'IGNORE_EXCEPTIONS': True,
+            },
+            'TIMEOUT': 900,  # 15 minutes
+        }
+    }
+else:
+    # Use local memory cache in development
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-medsearch'
+        }
+    }
+
+# WhiteNoise configuration for static files (production)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Proxy configuration (for hospital networks behind proxies)
+TRUSTED_PROXIES = [h for h in os.getenv('TRUSTED_PROXIES', '127.0.0.1').split(',') if h]
+
+# Database connection pooling for production
+if not DEBUG and os.getenv('DATABASE_URL', '').startswith('postgres'):
+    # Add connection pooling with psycopg2
+    import dj_database_url
+    DATABASES['default'] = dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
