@@ -40,41 +40,99 @@ class ParticipantExtractor:
     
     # Patterns pour détecter les nombres en chiffres
     # Ordre important: les patterns les plus spécifiques et prioritaires en premier
+    # Note: (?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}) capture les nombres avec ou sans séparateurs (34,684 ou 34684)
     NUMERIC_PATTERNS = [
         # PRIORITAIRES: Déclarations principales (début d'abstract)
         # "In total, 119 individuals participated"
-        r'(?:in\s+)?total[,\s]+(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|enrolled|were\s+included|were\s+recruited)',
+        r'(?:in\s+)?total[,\s]+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|enrolled|were\s+included|were\s+recruited)',
         
         # "119 participants were enrolled/included/recruited"
-        r'(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|were\s+enrolled|were\s+included|were\s+recruited|were\s+randomized)',
+        r'((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|were\s+enrolled|were\s+included|were\s+recruited|were\s+randomized)',
         
         # "A total of 119 participants"
-        r'total\s+of\s+(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        r'total\s+of\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
         
         # "The study included 119 participants"
-        r'(?:study|trial|analysis)\s+(?:included|enrolled|recruited)\s+(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        r'(?:study|trial|analysis)\s+(?:included|enrolled|recruited)\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        
+        # "planned enrollment is 700 participants" / "enrollment of 700 patients"
+        r'(?:planned\s+)?enrollment\s+(?:is|was|of)\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
+        
+        # "will enroll 700 participants" / "to enroll 700 patients"
+        r'(?:will|to)\s+enroll\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
+        
+        # "enrolling 700 participants"
+        r'enrolling\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
         
         # "119 patients" ou "119 participants" (simple mais efficace en début)
-        r'(\d{1,6})\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        r'((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
         
         # SECONDAIRES: Formats avec N = (souvent sous-groupes)
         # Sample size patterns
-        r'sample\s+size\s*[:\(]?\s*[Nn]?\s*=?\s*(\d{1,6})',
-        r'enrolled\s+(\d{1,6})\s+(?:participants?|patients?|subjects?)',
+        r'sample\s+size\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))',
+        r'enrolled\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # Study population
-        r'study\s+population\s*[:\(]?\s*[Nn]?\s*=?\s*(\d{1,6})',
-        r'cohort\s+of\s+(\d{1,6})\s+(?:participants?|patients?|subjects?)',
+        r'study\s+population\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))',
+        r'cohort\s+of\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # Pattern N = (peut être un sous-groupe, donc moins prioritaire)
-        r'[Nn]\s*=\s*(\d{1,6})',
+        r'[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))',
+        
+        # "enrolled 53 eyes" / "enrolled 130 adults" / "enrolled 10 pediatric patients"
+        r'enrolled\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:eyes?|adults?|children|pediatric\s+patients?|healthy\s+(?:adults?|volunteers?))',
+        
+        # "randomized 1:1" - capture le contexte de randomisation
+        r'((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?)\s+(?:were\s+)?randomized\s+(?:1\s*:\s*1|in\s+a\s+1\s*:\s*1)',
+        
+        # "randomly assigned 100 patients"
+        r'randomly\s+assigned\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "recruited 100 patients from..."
+        r'recruited\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "comprising 100 patients"
+        r'comprising\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "involved 100 patients"
+        r'involved\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "conducted on 100 patients"
+        r'conducted\s+(?:on|in|with)\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "analyzed 100 patients" / "analysis of 100 patients"
+        r'analy[sz](?:ed|is)\s+(?:of\s+)?((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "completed by 100 participants"
+        r'completed\s+by\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "data from 100 patients"
+        r'data\s+from\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "100 eligible patients"
+        r'((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+eligible\s+(?:participants?|patients?|subjects?)',
+        
+        # "100 consecutive patients"
+        r'((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+consecutive\s+(?:participants?|patients?|subjects?)',
+        
+        # "screened 200 patients" / "100 were screened"
+        r'screened\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "100 evaluable patients"
+        r'((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+evaluable\s+(?:participants?|patients?|subjects?)',
+        
+        # "assigned 50 to... and 50 to..." (capture le premier groupe)
+        r'assigned\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        
+        # "among 100 patients"
+        r'among\s+((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # Participants/patients avec format variable
-        r'(?:participants?|patients?|subjects?|individuals?|cases?)\s*[:\(]?\s*[Nn]?\s*=?\s*(\d{1,6})',
+        r'(?:participants?|patients?|subjects?|individuals?|cases?)\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))',
         
         # Entre parenthèses ou crochets (souvent précisions, donc basse priorité)
-        r'\([\s\w]*[Nn]\s*=\s*(\d{1,6})[\s\w]*\)',
-        r'\[[\s\w]*[Nn]\s*=\s*(\d{1,6})[\s\w]*\]',
+        r'\([\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))[\s\w]*\)',
+        r'\[[\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})*|\d{1,6}))[\s\w]*\]',
     ]
     
     # Patterns pour nombres en lettres
@@ -261,11 +319,15 @@ class ParticipantExtractor:
     
     @classmethod
     def _extract_number_from_match(cls, match):
-        """Extrait le nombre d'un match regex"""
+        """Extrait le nombre d'un match regex, gère les séparateurs de milliers (virgule, espace)"""
         for group_num in range(1, match.lastindex + 1 if match.lastindex else 1):
             try:
-                if match.group(group_num) and match.group(group_num).isdigit():
-                    return int(match.group(group_num))
+                group_text = match.group(group_num)
+                if group_text:
+                    # Supprimer les séparateurs de milliers (virgule et espace)
+                    cleaned = group_text.replace(',', '').replace(' ', '')
+                    if cleaned.isdigit():
+                        return int(cleaned)
             except:
                 continue
         return None
@@ -285,18 +347,21 @@ class ParticipantExtractor:
             # Nouveau système: patterns prioritaires ont les meilleurs scores
             base_scores = {
                 0: 0.95,  # "In total, 119 individuals participated" - PRIORITÉ MAX
-                1: 0.95,  # "119 participants were enrolled" - PRIORITÉ MAX
-                2: 0.90,  # "total of 119 participants" - HAUTE PRIORITÉ
-                3: 0.90,  # "study included 119 participants" - HAUTE PRIORITÉ
-                4: 0.85,  # "119 participants" simple - PRIORITÉ MOYENNE-HAUTE
-                5: 0.75,  # sample size: 123
-                6: 0.75,  # enrolled 123 participants
-                7: 0.70,  # study population
-                8: 0.70,  # cohort of
-                9: 0.60,  # N = 123 (souvent sous-groupe) - PRIORITÉ BASSE
-                10: 0.65, # participants: N = 123
-                11: 0.50, # (N = 123) entre parenthèses - TRÈS BASSE PRIORITÉ
-                12: 0.50, # [N = 123] entre crochets - TRÈS BASSE PRIORITÉ
+                1: 0.95,  # "119 participants/patients were enrolled" - PRIORITÉ MAX
+                2: 0.90,  # "total of 119 participants/patients" - HAUTE PRIORITÉ
+                3: 0.90,  # "study included 119 participants/patients" - HAUTE PRIORITÉ
+                4: 0.90,  # "planned enrollment is 700 participants" - HAUTE PRIORITÉ
+                5: 0.88,  # "will enroll 700 participants" - HAUTE PRIORITÉ
+                6: 0.88,  # "enrolling 700 participants" - HAUTE PRIORITÉ
+                7: 0.85,  # "119 participants/patients" simple - PRIORITÉ MOYENNE-HAUTE
+                8: 0.75,  # sample size: 123
+                9: 0.75,  # enrolled 123 participants/patients
+                10: 0.70, # study population
+                11: 0.70, # cohort of 123 patients
+                12: 0.60, # N = 123 (souvent sous-groupe) - PRIORITÉ BASSE
+                13: 0.65, # participants/patients: N = 123
+                14: 0.50, # (N = 123) entre parenthèses - TRÈS BASSE PRIORITÉ
+                15: 0.50, # [N = 123] entre crochets - TRÈS BASSE PRIORITÉ
             }
             score += base_scores.get(pattern_index, 0.6)
         else:  # written

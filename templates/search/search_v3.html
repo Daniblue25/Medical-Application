@@ -1,9 +1,17 @@
+<!--
+    Medical Search Platform v3.1
+    Copyright (c) 2025 DRCI - CHU Clermont-Ferrand
+    All rights reserved.
+    
+    Author: FIANKO Kossi Jean-Jacques Daniel
+    License: MIT License (see LICENSE file)
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Medical Search Platform v3.0</title>
+    <title>Medical Search Platform v3.1</title>
     {% load static %}
     <script src="{% static 'vendor/tailwind.js' %}"></script>
     
@@ -43,12 +51,16 @@
 <div class="flex h-screen overflow-hidden">
     <div class="sidebar bg-blue-900 text-white w-64 flex-shrink-0 transform -translate-x-full md:translate-x-0 fixed h-full z-40">
         <div class="p-4 flex items-center space-x-2 border-b border-blue-800">
-            <button id="appTitle" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.0</button>
+            <button id="appTitle" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.1</button>
         </div>
         <nav class="p-4">
             <div class="mb-6">
                 <h2 class="text-xs uppercase tracking-wider text-blue-400 mb-2">Navigation</h2>
                 <span class="flex items-center space-x-2 py-2 px-3 rounded bg-blue-800 text-white"><span aria-hidden="true">🔎</span><span>Search</span></span>
+                <button onclick="window.location.href='/about/'" class="w-full flex items-center space-x-2 py-2 px-3 rounded hover:bg-blue-800 text-white transition mt-2">
+                    <span aria-hidden="true">ℹ️</span>
+                    <span>About</span>
+                </button>
             </div>
         </nav>
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-800">
@@ -77,12 +89,26 @@
                     </div>
                 </div>
                 <form id="searchForm" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                         <div class="md:col-span-3">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Keywords</label>
-                            <input type="text" id="keywords" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter search terms..." />
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Keywords
+                                <span class="text-xs text-gray-500 ml-2">(Use ; or new line for multiple queries)</span>
+                            </label>
+                            <textarea 
+                                id="keywords" 
+                                rows="2" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y" 
+                                placeholder="Examples:&#10;Single: liver resection outcomes&#10;Batch: liver resection; pancreatic surgery; gastric cancer"
+                                oninput="detectBatchMode()"></textarea>
+                            <p class="text-xs text-gray-500 mt-1" id="batchHint">
+                                💡 Tip: Use <strong>;</strong> or <strong>new line</strong> to search multiple terms at once (max 10 queries)
+                            </p>
+                            <p class="text-xs font-semibold text-green-600 mt-1 hidden" id="batchDetected">
+                                ✅ Batch mode: <span id="batchCount">0</span> queries detected
+                            </p>
                         </div>
-                        <div>
+                        <div class="self-start">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
                             <select id="journalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="all">All</option>
@@ -110,12 +136,15 @@
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4 text-3xl">
                     <span aria-hidden="true">🔍</span>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to MedSearch v3.0</h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to MedSearch v3.1</h2>
                 <p class="text-gray-600 mb-2">High-Impact Medical & Surgical Literature Search Platform</p>
-                <p class="text-sm text-gray-500 max-w-2xl mx-auto mb-6">
+                <p class="text-sm text-gray-500 max-w-2xl mx-auto mb-4">
                     Search across 13 top-tier medical and surgical journals including <strong>NEJM</strong>, <strong>Lancet</strong>, 
                     <strong>JAMA</strong>, and <strong>British Journal of Surgery</strong>. Enter keywords above to retrieve 
                     real scientific articles with verified data, complete abstracts, and geographic insights.
+                </p>
+                <p class="text-xs text-gray-400 mb-4">
+                    © 2025 DRCI - CHU Clermont-Ferrand. All rights reserved.
                 </p>
                 <div class="flex flex-wrap justify-center gap-2">
                     <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ 13 Top-Tier Journals</span>
@@ -152,7 +181,9 @@
                         </div>
                         <div class="flex items-center flex-wrap gap-3">
                             <span class="text-sm text-gray-500" id="resultCount">0 results</span>
-                            <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center shadow-sm"><span class="mr-2" aria-hidden="true"></span> Export</button>
+                            <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center shadow-sm">
+                                <span class="mr-2" aria-hidden="true">📊</span> Excel
+                            </button>
                         </div>
                     </div>
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-sm text-gray-500">
@@ -165,7 +196,7 @@
                             <button id="lastPageBtn" class="px-3 py-1 rounded-full border border-gray-200 hover:bg-gray-100">»</button>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button id="clearSavedBtn" class="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50">Delete saved</button>
+                            <button id="clearCacheBtn2" class="px-3 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50">Clear cache</button>
                             <span id="savedCount" class="text-xs text-gray-500 hidden"></span>
                         </div>
                     </div>
@@ -218,13 +249,13 @@
                 <div class="col-span-2">
                     <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Abstract</h4><p class="text-gray-700" id="modalAbstract">Abstract text...</p></div>
                     
-                    <!-- ✨ NEW: Primary outcome section only -->
+                    <!-- ✨ NEW: Primary outcome & Adverse events section -->
                     <div class="bg-purple-50 p-4 rounded-lg mb-4" id="modalOutcomesSection">
                         <h4 class="font-medium text-purple-900 mb-3 flex items-center gap-2">
                             <span aria-hidden="true">🎯</span>
-                            Primary outcome automatically extracted
+                            Automatically extracted information
                         </h4>
-                        <div id="modalPrimaryOutcome" class="hidden">
+                        <div id="modalPrimaryOutcome" class="hidden mb-3">
                             <div class="flex items-start gap-2 mb-1">
                                 <span class="mt-0.5" aria-hidden="true">⭐</span>
                                 <p class="text-xs font-semibold text-purple-800">Primary outcome</p>
@@ -232,10 +263,18 @@
                             </div>
                             <p class="text-sm text-gray-700 bg-white p-3 rounded ml-6" id="modalPrimaryOutcomeText"></p>
                         </div>
+                        <div id="modalAdverseEvents" class="hidden mb-3">
+                            <div class="flex items-start gap-2 mb-1">
+                                <span class="mt-0.5" aria-hidden="true">⚠️</span>
+                                <p class="text-xs font-semibold text-red-700">Adverse Events</p>
+                                <span id="modalAdverseEventsConfidence" class="ml-auto text-xs"></span>
+                            </div>
+                            <p class="text-sm text-gray-700 bg-red-50 border border-red-100 p-3 rounded ml-6" id="modalAdverseEventsText"></p>
+                        </div>
                         <div id="modalNoOutcomes" class="hidden">
                             <p class="text-sm text-gray-500 italic flex items-center gap-2">
                                 <span aria-hidden="true">ℹ️</span>
-                                No primary outcome automatically identified in this abstract.
+                                No information automatically identified in this abstract.
                             </p>
                         </div>
                     </div>
@@ -293,7 +332,7 @@ const elements = {
     lastPageBtn: document.getElementById('lastPageBtn'),
     pageSizeSelect: document.getElementById('pageSize'),
     maxResultsSelect: document.getElementById('maxResults'),
-    clearSavedBtn: document.getElementById('clearSavedBtn'),
+    clearCacheBtn2: document.getElementById('clearCacheBtn2'),
     savedCount: document.getElementById('savedCount'),
     modal: document.getElementById('articleModal'),
     closeModalBtn: document.getElementById('closeModal'),
@@ -309,6 +348,7 @@ const elements = {
 
 const state = {
     results: [],
+    currentResults: [], // Stores unfiltered results for client-side filtering
     pagination: {
         page: 1,
         pageSize: parseInt(elements.pageSizeSelect?.value, 10) || 200,
@@ -532,6 +572,27 @@ function getVisibleArticles(articles) {
     });
 }
 
+// **NEW: Appliquer les filtres côté client (notamment le filtre région)**
+function applyClientSideFilters(articles) {
+    const regionFilter = document.getElementById('regionFilter')?.value;
+    
+    if (!regionFilter) {
+        return articles; // Pas de filtre région, retourner tous les articles
+    }
+    
+    // Filtrer les articles par région
+    const filtered = articles.filter(article => {
+        // Si l'article n'a pas de région définie, on l'inclut quand même
+        if (!article.region) return true;
+        
+        // Comparer la région de l'article avec le filtre sélectionné
+        return article.region.toLowerCase() === regionFilter.toLowerCase();
+    });
+    
+    console.log(`[Filter] Region filter "${regionFilter}": ${filtered.length}/${articles.length} articles match`);
+    return filtered;
+}
+
 function renderResults(data) {
     if (!elements.resultsGrid) return;
     state.results = data;
@@ -683,7 +744,7 @@ function showArticleModal(article) {
     document.getElementById('modalTitle').textContent = article.title || 'Untitled study';
     document.getElementById('modalAuthors').textContent = article.authors || 'Unknown authors';
     document.getElementById('modalJournal').textContent = `${article.journal || 'Unknown journal'}, ${article.year || '—'}`;
-    document.getElementById('modalAbstract').textContent = article.abstract || article.summary || 'No abstract available.';
+    // Abstract is set later with highlighting
     document.getElementById('modalStudyType').textContent = article.study_type || '—';
     // Affichage détaillé dans le modal
     const modalSampleEl = document.getElementById('modalSampleSize');
@@ -745,11 +806,54 @@ function showArticleModal(article) {
         </span>`;
     };
     
+    // Function to highlight important sections in abstract
+    const highlightAbstract = (abstractText, primaryOutcome, adverseEvents) => {
+        if (!abstractText) return '';
+        let highlighted = abstractText;
+        
+        // Escape special regex characters
+        const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // Highlight adverse events (red/orange)
+        if (adverseEvents) {
+            const aeText = adverseEvents.substring(0, 100); // First 100 chars for matching
+            const aePattern = escapeRegex(aeText.substring(0, 50));
+            try {
+                const aeRegex = new RegExp(`(${aePattern}[^.]*\\.)`, 'gi');
+                highlighted = highlighted.replace(aeRegex, '<mark class="bg-red-100 text-red-900 px-0.5 rounded">$1</mark>');
+            } catch(e) {}
+        }
+        
+        // Highlight primary outcome (purple)
+        if (primaryOutcome) {
+            const poText = primaryOutcome.substring(0, 100);
+            const poPattern = escapeRegex(poText.substring(0, 50));
+            try {
+                const poRegex = new RegExp(`(${poPattern}[^.]*\\.)`, 'gi');
+                highlighted = highlighted.replace(poRegex, '<mark class="bg-purple-100 text-purple-900 px-0.5 rounded">$1</mark>');
+            } catch(e) {}
+        }
+        
+        return highlighted;
+    };
+    
+    // Display abstract with highlights
+    const modalAbstract = document.getElementById('modalAbstract');
+    const highlightedAbstract = highlightAbstract(article.abstract, article.primary_outcome, article.adverse_events);
+    modalAbstract.innerHTML = highlightedAbstract || 'No abstract available.';
+    
     // Display primary outcome
     const primaryOutcomeContainer = document.getElementById('modalPrimaryOutcome');
     const primaryOutcomeText = document.getElementById('modalPrimaryOutcomeText');
     const primaryConfidenceEl = document.getElementById('modalPrimaryConfidence');
     const noOutcomesMsg = document.getElementById('modalNoOutcomes');
+    
+    // Display adverse events
+    const adverseEventsContainer = document.getElementById('modalAdverseEvents');
+    const adverseEventsText = document.getElementById('modalAdverseEventsText');
+    const adverseEventsConfidenceEl = document.getElementById('modalAdverseEventsConfidence');
+    
+    let hasAnyInfo = false;
     
     if (article.primary_outcome) {
         primaryOutcomeContainer.classList.remove('hidden');
@@ -757,9 +861,25 @@ function showArticleModal(article) {
         if (article.primary_outcome_confidence && primaryConfidenceEl) {
             primaryConfidenceEl.innerHTML = getConfidenceBadge(article.primary_outcome_confidence);
         }
-        noOutcomesMsg.classList.add('hidden');
+        hasAnyInfo = true;
     } else {
         primaryOutcomeContainer.classList.add('hidden');
+    }
+    
+    if (article.adverse_events) {
+        adverseEventsContainer.classList.remove('hidden');
+        adverseEventsText.textContent = article.adverse_events;
+        if (article.adverse_events_confidence && adverseEventsConfidenceEl) {
+            adverseEventsConfidenceEl.innerHTML = getConfidenceBadge(article.adverse_events_confidence);
+        }
+        hasAnyInfo = true;
+    } else {
+        adverseEventsContainer.classList.add('hidden');
+    }
+    
+    if (hasAnyInfo) {
+        noOutcomesMsg.classList.add('hidden');
+    } else {
         noOutcomesMsg.classList.remove('hidden');
     }
 
@@ -859,10 +979,49 @@ function updateCharts(data) {
     }
 }
 
+// **NEW: Détection visuelle du mode batch en temps réel**
+function detectBatchMode() {
+    const keywordsInput = document.getElementById('keywords').value.trim();
+    const batchHint = document.getElementById('batchHint');
+    const batchDetected = document.getElementById('batchDetected');
+    const batchCount = document.getElementById('batchCount');
+    
+    // Détecter si multiple queries (séparées par ; ou retour à la ligne)
+    // Remplacer les retours à la ligne par des points-virgules
+    const normalizedInput = keywordsInput.replace(/\n+/g, ';');
+    const queries = normalizedInput.split(';').map(q => q.trim()).filter(q => q.length > 0);
+    
+    if (queries.length > 1) {
+        // Mode batch détecté
+        batchHint.classList.add('hidden');
+        batchDetected.classList.remove('hidden');
+        batchCount.textContent = Math.min(queries.length, 10); // Max 10
+    } else {
+        // Mode normal
+        batchHint.classList.remove('hidden');
+        batchDetected.classList.add('hidden');
+    }
+}
+
 async function performSearch({ page } = {}) {
     if (typeof page === 'number') {
         state.pagination.page = page;
     }
+    
+    // **NEW: Détection automatique batch search**
+    const keywordsInput = document.getElementById('keywords').value.trim();
+    
+    // Détecter si multiple queries (séparées par ; ou retour à la ligne)
+    // Remplacer les retours à la ligne par des points-virgules
+    const normalizedInput = keywordsInput.replace(/\n+/g, ';');
+    const queries = normalizedInput.split(';').map(q => q.trim()).filter(q => q.length > 0);
+    
+    if (queries.length > 1) {
+        // Mode BATCH détecté automatiquement
+        return performBatchSearch(queries);
+    }
+    
+    // Mode SINGLE (normal)
     const payload = getFormPayload();
     payload.page = state.pagination.page;
     payload.pageSize = state.pagination.pageSize;
@@ -901,22 +1060,132 @@ async function performSearch({ page } = {}) {
         if (!response.ok || json.status !== 'success') {
             throw new Error(json.message || 'Search failed');
         }
-        renderResults(json.data || []);
-        updateCharts(json.data || []);
+        
+        // Store unfiltered results for client-side filtering
+        state.currentResults = json.data || [];
+        
+        // **NEW: Appliquer les filtres côté client (région)**
+        const filteredArticles = applyClientSideFilters(state.currentResults);
+        const totalBeforeFilter = state.currentResults.length;
+        const totalAfterFilter = filteredArticles.length;
+        
+        renderResults(filteredArticles);
+        updateCharts(filteredArticles);
         updatePagination({
             page: json.page,
             page_size: json.page_size,
-            total: json.total,
+            total: totalAfterFilter, // Utiliser le total après filtrage
             page_count: json.page_count,
             returned: json.returned
         });
-        showStatus(json.message || `Found ${json.total ?? state.results.length} articles`, (json.total ?? state.results.length) ? 'success' : 'warning');
+        
+        // Indiquer si résultats viennent du cache
+        const cacheInfo = json.source === 'cache' ? ` (cached ${json.cache_age_days} days ago)` : '';
+        const regionFilter = document.getElementById('regionFilter')?.value;
+        const regionInfo = regionFilter && totalBeforeFilter !== totalAfterFilter 
+            ? ` | Region filter: ${getRegionName(regionFilter)} (${totalAfterFilter}/${totalBeforeFilter} articles)` 
+            : '';
+        showStatus((json.message || `Found ${json.total ?? state.results.length} articles`) + cacheInfo + regionInfo, (json.total ?? state.results.length) ? 'success' : 'warning');
         elements.resultsSection?.classList.remove('hidden');
     } catch (error) {
         console.error(error);
+        state.currentResults = []; // Clear on error
         renderResults([]);
         updatePagination({ page: 1, page_size: state.pagination.pageSize, total: 0, page_count: 1, returned: 0 });
         showStatus('Unable to retrieve search results. Please try again.', 'error');
+        elements.resultsSection?.classList.remove('hidden');
+    } finally {
+        setLoading(false);
+        checkCache();
+    }
+}
+
+// **NEW: Batch Search Function**
+async function performBatchSearch(queries) {
+    if (queries.length > 10) {
+        showStatus('⚠️ Maximum 10 queries allowed. Using first 10 queries.', 'warning');
+        queries = queries.slice(0, 10);
+    }
+    
+    // Cacher le message de bienvenue
+    const welcomeMsg = document.getElementById('welcomeMessage');
+    if (welcomeMsg) welcomeMsg.classList.add('hidden');
+    
+    setLoading(true);
+    state.hidden.clear();
+    
+    try {
+        clearStatus();
+        showStatus(`🔄 Searching ${queries.length} queries in parallel...`, 'info');
+        console.log('[Batch Search] Launching', queries.length, 'queries:', queries);
+        
+        // Construire le payload batch
+        const commonParams = {
+            study_type: document.getElementById('surgeryType')?.value || '',
+            journal_rank: document.getElementById('journalRank')?.value || 'all',
+            time_period: document.getElementById('timePeriod')?.value || '10'
+        };
+        
+        const batchQueries = queries.map(kw => ({
+            keywords: kw,
+            ...commonParams
+        }));
+        
+        const response = await fetch('/api/batch-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                queries: batchQueries,
+                max_results_per_query: 200,
+                combine: true,  // Combiner tous les résultats
+                dedup: true     // Dédupliquer par PMID
+            })
+        });
+        
+        const json = await response.json();
+        console.log('[Batch Search] Response:', json);
+        
+        if (!response.ok || json.status !== 'success') {
+            throw new Error(json.message || 'Batch search failed');
+        }
+        
+        const articles = json.data || [];
+        
+        // Store unfiltered results for client-side filtering
+        state.currentResults = articles;
+        
+        // **NEW: Appliquer les filtres côté client (région)**
+        const filteredArticles = applyClientSideFilters(articles);
+        const totalBeforeFilter = articles.length;
+        const totalAfterFilter = filteredArticles.length;
+        
+        // Afficher les résultats
+        renderResults(filteredArticles);
+        updateCharts(filteredArticles);
+        updatePagination({
+            page: 1,
+            page_size: filteredArticles.length,
+            total: filteredArticles.length,
+            page_count: 1,
+            returned: filteredArticles.length
+        });
+        
+        const cachedInfo = json.cached_queries > 0 ? ` (${json.cached_queries}/${json.total_queries} from cache)` : '';
+        const regionFilter = document.getElementById('regionFilter')?.value;
+        const regionInfo = regionFilter && totalBeforeFilter !== totalAfterFilter 
+            ? ` | Region filter: ${getRegionName(regionFilter)} (${totalAfterFilter}/${totalBeforeFilter})` 
+            : '';
+        const successMsg = `✅ Batch search completed: ${totalAfterFilter} articles from ${json.successful_queries}/${json.total_queries} queries${cachedInfo}${regionInfo}`;
+        showStatus(successMsg, 'success');
+        
+        elements.resultsSection?.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('[Batch Search Error]', error);
+        state.currentResults = []; // Clear on error
+        renderResults([]);
+        updatePagination({ page: 1, page_size: 0, total: 0, page_count: 1, returned: 0 });
+        showStatus('Batch search failed. Please try again.', 'error');
         elements.resultsSection?.classList.remove('hidden');
     } finally {
         setLoading(false);
@@ -996,11 +1265,19 @@ if (elements.lastPageBtn) {
     elements.lastPageBtn.addEventListener('click', () => goToPage(state.pagination.pageCount));
 }
 
-if (elements.clearSavedBtn) {
-    elements.clearSavedBtn.addEventListener('click', () => {
-        state.saved.clear();
-        persistSaved();
-        showStatus('Toutes les sauvegardes ont été supprimées.', 'info');
+if (elements.clearCacheBtn2) {
+    elements.clearCacheBtn2.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/cache/clear', { method: 'POST' });
+            if (response.ok) {
+                showStatus('Cache serveur vidé avec succès.', 'info');
+            } else {
+                showStatus('Erreur lors du vidage du cache.', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showStatus('Impossible de vider le cache.', 'error');
+        }
     });
 }
 
@@ -1026,6 +1303,29 @@ if (elements.searchForm) {
         event.preventDefault();
         state.pagination.page = 1;
         performSearch({ page: 1 });
+    });
+}
+
+// Region filter change listener - re-filter current results without new search
+const regionFilterElement = document.getElementById('regionFilter');
+if (regionFilterElement) {
+    regionFilterElement.addEventListener('change', () => {
+        // Only re-filter if we have current results
+        if (state.currentResults && state.currentResults.length > 0) {
+            const filteredArticles = applyClientSideFilters(state.currentResults);
+            const totalBeforeFilter = state.currentResults.length;
+            const totalAfterFilter = filteredArticles.length;
+            
+            renderResults(filteredArticles);
+            
+            // Update status message
+            const regionFilter = regionFilterElement.value;
+            const regionName = regionFilterElement.options[regionFilterElement.selectedIndex].text;
+            const regionInfo = regionFilter ? ` | Region filter: ${regionName} (${totalAfterFilter}/${totalBeforeFilter} articles)` : '';
+            showStatus(`✅ Results filtered${regionInfo}`, 'success');
+            
+            console.log(`[Region Filter Change] Applied filter "${regionFilter}": ${totalAfterFilter}/${totalBeforeFilter} articles`);
+        }
     });
 }
 

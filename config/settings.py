@@ -1,3 +1,12 @@
+"""
+Medical Search Platform - Django Settings
+Copyright (c) 2025 DRCI - CHU Clermont-Ferrand
+All rights reserved.
+
+Author: FIANKO Kossi Jean-Jacques Daniel
+License: MIT License (see LICENSE file)
+"""
+
 import os
 import warnings
 from importlib.util import find_spec

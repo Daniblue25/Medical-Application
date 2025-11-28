@@ -1,9 +1,19 @@
+"""
+Medical Search Platform - Search Views
+Copyright (c) 2025 DRCI - CHU Clermont-Ferrand
+All rights reserved.
+
+Author: FIANKO Kossi Jean-Jacques Daniel
+License: MIT License (see LICENSE file)
+"""
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.core.cache import cache
 from django.views.decorators.csrf import csrf_exempt
 from config.caching import register_cache_key
 from ..services.pubmed_client import search_pubmed, PubMedError
+from ..services.cache_manager import CacheManager
 import math
 import logging
 import requests
@@ -31,11 +41,6 @@ def search_api(request):
     except (TypeError, ValueError):
         page = 1
 
-    cache_key = f"search:{hash(frozenset({**data, 'page': page, 'page_size': page_size}.items()))}"
-    cached = cache.get(cache_key)
-    if cached:
-        return Response({"status": "success", "cached": True, **cached})
-    
     # Gérer le filtre de rang de revue
     journal_rank = data.get('journalRank', 'all')
     if journal_rank == 'a':
@@ -56,6 +61,55 @@ def search_api(request):
 
     keyword = (filters['keywords'] or '').strip()
     
+    # **NOUVEAU: Vérifier le cache de base de données**
+    # Extraire year_from et year_to depuis time_period
+    time_period = filters.get('time_period', '10')
+    year_to = None
+    year_from = None
+    if time_period and time_period.isdigit():
+        from datetime import datetime
+        year_to = datetime.now().year
+        year_from = year_to - int(time_period)
+    
+    cached_result = CacheManager.get_cached_results(
+        keywords=keyword,
+        surgery_type=filters['study_type'],
+        journal_rank=journal_rank,
+        year_from=year_from,
+        year_to=year_to
+    )
+    
+    if cached_result and page == 1:
+        # Cache trouvé et frais, retourner directement
+        articles = cached_result['articles']
+        total_available = len(articles)
+        effective_page_size = min(page_size, max_results, 200)
+        page_count = max(1, math.ceil(total_available / effective_page_size))
+        
+        # Pagination des résultats en cache
+        start_idx = (page - 1) * effective_page_size
+        end_idx = start_idx + effective_page_size
+        page_articles = articles[start_idx:end_idx]
+        
+        return Response({
+            "status": "success",
+            "data": page_articles,
+            "total": total_available,
+            "returned": len(page_articles),
+            "page": page,
+            "page_size": effective_page_size,
+            "page_count": page_count,
+            "source": "cache",
+            "cache_age_days": cached_result['cache_age_days'],
+            "message": f"Cached results ({cached_result['cache_age_days']} days old) - {total_available} articles"
+        })
+    
+    # Pas de cache ou expiré, requête PubMed normale
+    cache_key = f"search:{hash(frozenset({**data, 'page': page, 'page_size': page_size}.items()))}"
+    cached = cache.get(cache_key)
+    if cached:
+        return Response({"status": "success", "cached": True, **cached})
+    
     try:
         # Toujours utiliser PubMed - si pas de keyword, recherche générale
         start_index = (page - 1) * min(page_size, 200)
@@ -70,6 +124,22 @@ def search_api(request):
         total_available = min(total_count, max_results)
         effective_page_size = min(page_size, max_results, 200)
         page_count = max(1, math.ceil(total_available / effective_page_size))
+        
+        # **NOUVEAU: Sauvegarder dans le cache de base de données**
+        # Seulement si page 1 et qu'on a des résultats
+        if page == 1 and articles:
+            try:
+                CacheManager.save_to_cache(
+                    keywords=keyword,
+                    articles=articles,
+                    surgery_type=filters['study_type'],
+                    journal_rank=journal_rank,
+                    year_from=year_from,
+                    year_to=year_to
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save to cache: {e}")
+        
         payload = {
             "data": articles,
             "total": total_available,
@@ -217,3 +287,91 @@ def sample_api(request):
             "message": "PubMed API is currently unavailable.",
             "error": str(exc)
         }, status=503)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def batch_search_api(request):
+    """
+    Recherche batch: lance plusieurs recherches PubMed en parallèle.
+    Accepte un array de queries et retourne les résultats groupés.
+    
+    Body: {
+        "queries": [
+            {
+                "keywords": "liver resection",
+                "study_type": "hepatic",
+                "journal_rank": "a",
+                "time_period": "10"
+            },
+            {
+                "keywords": "pancreatic surgery outcomes",
+                "study_type": "pancreatic",
+                "journal_rank": "all",
+                "time_period": "5"
+            }
+        ],
+        "max_results_per_query": 200,
+        "combine": true,  // Optionnel: combiner tous les résultats
+        "dedup": true     // Optionnel: dédupliquer par PMID
+    }
+    """
+    from ..services.batch_search import BatchSearchService
+    
+    data = request.data or {}
+    queries = data.get('queries', [])
+    max_results = data.get('max_results_per_query', 200)
+    combine = data.get('combine', False)
+    dedup = data.get('dedup', True)
+    
+    if not queries:
+        return Response({
+            "status": "error",
+            "message": "No queries provided. Expected 'queries' array in request body."
+        }, status=400)
+    
+    if len(queries) > 10:
+        return Response({
+            "status": "error",
+            "message": "Maximum 10 queries allowed per batch request."
+        }, status=400)
+    
+    try:
+        # Lancer les recherches batch
+        logger.info(f"Batch search: {len(queries)} queries")
+        batch_result = BatchSearchService.process_batch_queries(
+            queries=queries,
+            max_results_per_query=max_results,
+            use_cache=True
+        )
+        
+        if combine:
+            # Mode combiné: retourner une seule liste d'articles
+            combined_articles = BatchSearchService.combine_results(batch_result, dedup_by_pmid=dedup)
+            
+            return Response({
+                "status": "success",
+                "mode": "combined",
+                "total_queries": batch_result['total_queries'],
+                "successful_queries": batch_result['successful_queries'],
+                "total_articles": len(combined_articles),
+                "cached_queries": batch_result.get('cached_queries', 0),
+                "data": combined_articles,
+                "errors": batch_result.get('errors')
+            })
+        else:
+            # Mode groupé: retourner les résultats par query
+            return Response({
+                "status": "success",
+                "mode": "grouped",
+                **batch_result
+            })
+    
+    except Exception as exc:
+        logger.exception("Batch search failed", exc_info=exc)
+        return Response({
+            "status": "error",
+            "message": "Batch search failed. Please try again.",
+            "error": str(exc)
+        }, status=500)
+

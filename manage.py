@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+"""
+Medical Search Platform - Django Management Script
+Copyright (c) 2025 DRCI - CHU Clermont-Ferrand
+All rights reserved.
+
+Author: FIANKO Kossi Jean-Jacques Daniel
+License: MIT License (see LICENSE file)
+"""
+
 import os
 import sys
 

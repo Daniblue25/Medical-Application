@@ -1,3 +1,12 @@
+"""
+Medical Search Platform - PubMed Client Service
+Copyright (c) 2025 DRCI - CHU Clermont-Ferrand
+All rights reserved.
+
+Author: FIANKO Kossi Jean-Jacques Daniel
+License: MIT License (see LICENSE file)
+"""
+
 import os
 import re
 from datetime import datetime
@@ -8,7 +17,6 @@ import requests
 from requests import Response
 from xml.etree import ElementTree
 from .participant_extractor import ParticipantExtractor
-from .llm_extractor import LLMParticipantExtractor
 from .outcome_extractor import OutcomeExtractor
 from .region_detector import get_region_from_affiliation
 from .journal_config import build_journal_filter
@@ -209,10 +217,12 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "citations": None,
                 "impact_factor": None,
                 "doi": doi,
-                # ✨ Critère principal uniquement
+                # ✨ Critères extraits automatiquement
                 "primary_outcome": outcomes.get('primary_outcome'),
                 "primary_outcome_confidence": outcomes.get('primary_outcome_confidence'),
-                "has_outcomes": bool(outcomes.get('primary_outcome')),
+                "adverse_events": outcomes.get('adverse_events'),
+                "adverse_events_confidence": outcomes.get('adverse_events_confidence'),
+                "has_outcomes": bool(outcomes.get('primary_outcome') or outcomes.get('adverse_events')),
                 "outcome_summary": outcome_summary,
             }
         )

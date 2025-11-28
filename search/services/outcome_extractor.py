@@ -22,32 +22,52 @@ class OutcomeExtractor:
     """
     
     # Patterns regex pour critères principaux (score de confiance selon spécificité)
+    # Mis à jour avec patterns découverts dans PubMed réels
     PRIMARY_PATTERNS = [
         # High confidence (formulations explicites et complètes)
-        (re.compile(r"(the\s+)?primary\s+outcome\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
-        (re.compile(r"(the\s+)?primary\s+endpoint\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
-        (re.compile(r"(the\s+)?main\s+outcome\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:effectiveness|efficacy)\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:safety\s+)?(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?main\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?main\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?treatment\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?clinical\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        # NEW: "The primary outcome of the study is..."
+        (re.compile(r"(the\s+)?primary\s+(?:out\s*come|outcome)\s+of\s+(?:the\s+)?(?:study|trial)\s+(?:was|were|is|are)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        # NEW: "Primary outcome will be assessed using..."
+        (re.compile(r"(the\s+)?primary\s+(?:out\s*come|outcome)\s+(?:will\s+be|was)\s+(?:assessed|measured|evaluated)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        # NEW: "Primary outcomes were bone resection..." (pluriel direct)
+        (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s+(?:were|was|are|is|included?)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        # NEW: "Primary outcome variables were..."
+        (re.compile(r"primary\s+(?:out\s*come|outcome)\s+(?:variables?|measures?)\s+(?:were|was|are|is)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
+        # French
         (re.compile(r"le\s+critère\s+principal\s+(?:était|est)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
         (re.compile(r"l'objectif\s+principal\s+(?:était|est)\s+([^.]{10,150}\.)", re.IGNORECASE), 'high'),
         
         # Medium confidence (formulations avec ":" ou sans verbe explicite)
-        (re.compile(r"primary\s+outcome[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
-        (re.compile(r"primary\s+endpoint[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
-        (re.compile(r"main\s+outcome[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
-        (re.compile(r"primary\s+outcome[s]?\s+included\s+([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:out\s*come|outcome)[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:end\s*point|endpoint)[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:effectiveness|efficacy)\s+(?:end\s*point|endpoint)[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"main\s+(?:out\s*come|outcome)[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"treatment\s+(?:out\s*come|outcome)[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"clinical\s+(?:out\s*come|outcome)[s]?\s*:\s*([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:out\s*come|outcome)[s]?\s+included\s+([^.]{10,150}\.)", re.IGNORECASE), 'medium'),
         
         # Low confidence (formulations vagues ou courtes)
         (re.compile(r"primary\s+(?:measure|assessment)\s+(?:was|were)\s+([^.]{10,150}\.)", re.IGNORECASE), 'low'),
         (re.compile(r"we\s+(?:assessed|evaluated|measured)\s+([^.]{10,150}\.)", re.IGNORECASE), 'low'),
+        (re.compile(r"(?:out\s*come|outcome)[s]?\s+(?:was|were|included)\s+([^.]{10,150}\.)", re.IGNORECASE), 'low'),
     ]
     
     # Patterns pour critères secondaires
     SECONDARY_PATTERNS = [
-        (re.compile(r"secondary\s+outcome[s]?\s+(?:was|were|is|are|included?)\s+([^.]{10,200}\.)", re.IGNORECASE), 'high'),
-        (re.compile(r"secondary\s+endpoint[s]?\s+(?:was|were|is|are|included?)\s+([^.]{10,200}\.)", re.IGNORECASE), 'high'),
-        (re.compile(r"secondary\s+outcome[s]?\s*:\s*([^.]{10,200}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"secondary\s+(?:out\s*come|outcome)[s]?\s+(?:was|were|is|are|included?)\s+([^.]{10,200}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"secondary\s+(?:end\s*point|endpoint)[s]?\s+(?:was|were|is|are|included?)\s+([^.]{10,200}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"secondary\s+(?:out\s*come|outcome)[s]?\s*:\s*([^.]{10,200}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"secondary\s+(?:end\s*point|endpoint)[s]?\s*:\s*([^.]{10,200}\.)", re.IGNORECASE), 'medium'),
         (re.compile(r"critère[s]?\s+secondaire[s]?\s+([^.]{10,200}\.)", re.IGNORECASE), 'medium'),
-        (re.compile(r"other\s+outcome[s]?\s+included\s+([^.]{10,200}\.)", re.IGNORECASE), 'low'),
+        (re.compile(r"other\s+(?:out\s*come|outcome)[s]?\s+included\s+([^.]{10,200}\.)", re.IGNORECASE), 'low'),
     ]
     
     # Patterns pour inclusion
@@ -68,6 +88,40 @@ class OutcomeExtractor:
         (re.compile(r"critères?\s+d'exclusion\s*:\s*([^.]{10,200}\.)", re.IGNORECASE), 'high'),
         (re.compile(r"we\s+excluded\s+patients?\s+(?:who|with)\s+([^.]{10,200}\.)", re.IGNORECASE), 'medium'),
         (re.compile(r"exclusion\s+criteria\s*:\s*([^.]{10,200}\.)", re.IGNORECASE), 'medium'),
+    ]
+    
+    # Patterns pour Adverse Events (effets indésirables)
+    # PRIORITÉ: Phrases avec données chiffrées (%, n=, nombre de patients)
+    # Mis à jour avec patterns découverts dans PubMed réels
+    ADVERSE_EVENTS_PATTERNS = [
+        # HIGH PRIORITY: Phrases avec pourcentages ou nombres (les plus informatives)
+        (re.compile(r"((?:treatment[- ]?related\s+)?(?:serious\s+)?adverse\s+events?[^.]*\d+\s*[\(%][^.]{10,300}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:grade\s+[3-5]|serious)\s+adverse\s+events?[^.]*\d+[^.]{10,250}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:most\s+)?common\s+(?:treatment[- ]?related\s+)?(?:adverse\s+events?|side\s+effects?)[^.]*(?:were|was|included?)[^.]*\d+[^.]{10,250}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(adverse\s+events?[^.]*occurred\s+in\s+\d+[^.]{10,250}\.)", re.IGNORECASE), 'high'),
+        (re.compile(r"(adverse\s+events?[^.]*(?:were|was)\s+(?:observed|reported)\s+in\s+\d+[^.]{10,250}\.)", re.IGNORECASE), 'high'),
+        # NEW: "Adverse events occurred in 90%..."
+        (re.compile(r"(adverse\s+events?\s+occurred\s+in\s+\d+[^.]{5,200}\.)", re.IGNORECASE), 'high'),
+        # NEW: "serious adverse events (SAEs)" avec stats
+        (re.compile(r"((?:serious\s+)?adverse\s+events?\s*\((?:SAEs?|AEs?)\)[^.]*\d+[^.]{10,200}\.)", re.IGNORECASE), 'high'),
+        # NEW: "safety profile...adverse event rates"
+        (re.compile(r"(safety\s+profile[^.]*adverse\s+event[^.]*\d+[^.]{10,200}\.)", re.IGNORECASE), 'high'),
+        # NEW: "did not reduce the risk of any adverse event"
+        (re.compile(r"([^.]*(?:reduce|increase)[^.]*risk[^.]*adverse\s+event[^.]*\d+[^.]{5,150}\.)", re.IGNORECASE), 'high'),
+        # NEW: "treatment-emergent adverse events" - pattern très commun
+        (re.compile(r"(treatment[- ]?emergent\s+adverse\s+events?[^.]*\d+[^.]{10,200}\.)", re.IGNORECASE), 'high'),
+        
+        # MEDIUM: Phrases descriptives avec verbes spécifiques mais sans chiffres directs
+        (re.compile(r"((?:treatment[- ]?related\s+)?(?:serious\s+)?adverse\s+events?\s+(?:of\s+any\s+grade\s+)?(?:were|was)\s+(?:observed|reported|occurred)\s+in\s+[^.]{10,300}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"adverse\s+events?\s*:\s*([^.]{10,250}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:treatment[- ]?related\s+)?(?:adverse|side)\s+effects?\s+(?:were|was|included?)\s+[^.]{10,250}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(toxicit(?:y|ies)\s+(?:were|was|included?|occurred)[^.]*\d+[^.]{10,250}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:effets?\s+)?(?:indésirables?|secondaires?)\s+(?:étaient|ont\s+été)\s+[^.]{10,250}\.)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(safety\s+(?:end\s*point|endpoint|outcome)[s]?\s+(?:were|was|included?)\s+[^.]{10,250}\.)", re.IGNORECASE), 'medium'),
+        
+        # LOW: Phrases génériques (moins informatives - à éviter si possible)
+        # Note: "incidence...were similar" sans chiffres est peu informatif
+        (re.compile(r"(complications?\s+(?:occurred|were\s+observed|included?)\s+in\s+\d+[^.]{10,200}\.)", re.IGNORECASE), 'low'),
     ]
     
     @staticmethod
@@ -175,7 +229,7 @@ class OutcomeExtractor:
             
         Returns:
             Dictionnaire avec clés: primary_outcome, secondary_outcome, 
-            inclusion_criteria, exclusion_criteria + confidence scores
+            inclusion_criteria, exclusion_criteria, adverse_events + confidence scores
         """
         if not abstract or len(abstract) < 50:
             return {
@@ -187,6 +241,8 @@ class OutcomeExtractor:
                 "inclusion_confidence": None,
                 "exclusion_criteria": None,
                 "exclusion_confidence": None,
+                "adverse_events": None,
+                "adverse_events_confidence": None,
                 "has_outcomes": False
             }
         
@@ -199,12 +255,14 @@ class OutcomeExtractor:
             secondary_results = cls._extract_with_context(cls.SECONDARY_PATTERNS, sentences, max_results=2)
             inclusion_results = cls._extract_with_context(cls.INCLUSION_PATTERNS, sentences, max_results=2)
             exclusion_results = cls._extract_with_context(cls.EXCLUSION_PATTERNS, sentences, max_results=2)
+            adverse_events_results = cls._extract_with_context(cls.ADVERSE_EVENTS_PATTERNS, sentences, max_results=2)
             
             # Fusion des résultats multi-phrases
             primary_text, primary_conf = cls._merge_multi_sentence_outcomes(primary_results)
             secondary_text, secondary_conf = cls._merge_multi_sentence_outcomes(secondary_results)
             inclusion_text, inclusion_conf = cls._merge_multi_sentence_outcomes(inclusion_results)
             exclusion_text, exclusion_conf = cls._merge_multi_sentence_outcomes(exclusion_results)
+            adverse_events_text, adverse_events_conf = cls._merge_multi_sentence_outcomes(adverse_events_results)
             
             results = {
                 "primary_outcome": primary_text,
@@ -215,7 +273,9 @@ class OutcomeExtractor:
                 "inclusion_confidence": inclusion_conf,
                 "exclusion_criteria": exclusion_text,
                 "exclusion_confidence": exclusion_conf,
-                "has_outcomes": bool(primary_text or secondary_text or inclusion_text or exclusion_text)
+                "adverse_events": adverse_events_text,
+                "adverse_events_confidence": adverse_events_conf,
+                "has_outcomes": bool(primary_text or secondary_text or inclusion_text or exclusion_text or adverse_events_text)
             }
             
             logger.debug(f"[OutcomeExtractor] Extracted {sum(1 for k, v in results.items() if v and 'confidence' not in k)} criteria")
@@ -232,6 +292,8 @@ class OutcomeExtractor:
                 "inclusion_confidence": None,
                 "exclusion_criteria": None,
                 "exclusion_confidence": None,
+                "adverse_events": None,
+                "adverse_events_confidence": None,
                 "has_outcomes": False
             }
     
