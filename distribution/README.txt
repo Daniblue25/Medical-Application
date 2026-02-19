@@ -47,7 +47,7 @@
 
 - Email: support@medical-search.com
 - Version: 3.0
-- Date de build: 2025-11-14
+- Date de build: 2025-12-14
 - Systme: windows
 
 ##  Journaux cibles

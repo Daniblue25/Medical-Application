@@ -1,6 +1,6 @@
 <!--
-    Medical Search Platform v3.1
-    Copyright (c) 2025 DRCI - CHU Clermont-Ferrand
+    Medical Search Platform v3.2
+    Copyright (c) 2025-2026 DRCI - CHU Clermont-Ferrand
     All rights reserved.
     
     Author: FIANKO Kossi Jean-Jacques Daniel
@@ -11,72 +11,42 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Medical Search Platform v3.1</title>
+    <title>Medical Search Platform v3.2</title>
     {% load static %}
-    <script src="{% static 'vendor/tailwind.js' %}"></script>
-    
-    <style>
-        .sidebar {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        /* Bouton de fermeture toujours visible sur mobile */
-        @media (max-width: 768px) {
-            .close-article {
-                opacity: 1 !important;
-            }
-        }
-        /* Animation plus douce pour le hover du bouton de fermeture */
-        .close-article {
-            transition: all 0.2s ease;
-        }
-        .close-article:hover {
-            transform: scale(1.1);
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
 <div class="flex h-screen overflow-hidden">
     <div class="sidebar bg-blue-900 text-white w-64 flex-shrink-0 transform -translate-x-full md:translate-x-0 fixed h-full z-40">
         <div class="p-4 flex items-center space-x-2 border-b border-blue-800">
-            <button id="appTitle" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.1</button>
+            <button id="appTitle" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.2</button>
         </div>
         <nav class="p-4">
             <div class="mb-6">
                 <h2 class="text-xs uppercase tracking-wider text-blue-400 mb-2">Navigation</h2>
-                <span class="flex items-center space-x-2 py-2 px-3 rounded bg-blue-800 text-white"><span aria-hidden="true">🔎</span><span>Search</span></span>
+                <span class="flex items-center space-x-2 py-2 px-3 rounded bg-blue-800 text-white"><i class="fas fa-search"></i><span>Search</span></span>
                 <button onclick="window.location.href='/about/'" class="w-full flex items-center space-x-2 py-2 px-3 rounded hover:bg-blue-800 text-white transition mt-2">
-                    <span aria-hidden="true">ℹ️</span>
+                    <i class="fas fa-info-circle"></i>
                     <span>About</span>
                 </button>
             </div>
         </nav>
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-800">
             <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center"><span class="text-sm" aria-hidden="true">👤</span></div>
-                <div><p class="text-sm font-medium">We have to improve our search capabilities.</p><p class="text-xs text-blue-300">Dear Member</p></div>
+                <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center"><i class="fas fa-user text-sm"></i></div>
+                <div><p class="text-sm font-medium">MedSearch v3.2</p><p class="text-xs text-blue-300">Medical & Surgical Research</p></div>
             </div>
         </div>
     </div>
     <div class="md:hidden fixed bottom-4 right-4 z-50">
-    <button id="sidebarToggle" class="w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"><span class="text-xl" aria-hidden="true">☰</span></button>
+    <button id="sidebarToggle" class="w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"><i class="fas fa-bars text-xl"></i></button>
     </div>
     <div class="flex-1 overflow-auto bg-gray-50 md:pl-64">
         <header class="bg-white shadow-sm">
             <div class="px-4 py-3 flex justify-between items-center">
-                <div><h1 class="text-xl font-bold text-gray-800 flex items-center"><span class="mr-2" aria-hidden="true">🩺</span>Medical Literature Search</h1><p class="text-sm text-gray-500">Advanced PubMed analysis platform</p></div>
+                <div><h1 class="text-xl font-bold text-gray-800 flex items-center"><i class="fas fa-heartbeat text-blue-600 mr-2"></i>Medical Literature Search</h1><p class="text-sm text-gray-500">Advanced PubMed analysis platform</p></div>
                 <div></div>
             </div>
         </header>
@@ -102,70 +72,109 @@
                                 placeholder="Examples:&#10;Single: liver resection outcomes&#10;Batch: liver resection; pancreatic surgery; gastric cancer"
                                 oninput="detectBatchMode()"></textarea>
                             <p class="text-xs text-gray-500 mt-1" id="batchHint">
-                                💡 Tip: Use <strong>;</strong> or <strong>new line</strong> to search multiple terms at once (max 10 queries)
+                                <i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Tip: Use <strong>;</strong> or <strong>new line</strong> to search multiple terms at once (max 10 queries)
                             </p>
                             <p class="text-xs font-semibold text-green-600 mt-1 hidden" id="batchDetected">
-                                ✅ Batch mode: <span id="batchCount">0</span> queries detected
+                                <i class="fas fa-check-circle mr-1"></i> Batch mode: <span id="batchCount">0</span> queries detected
                             </p>
                         </div>
                         <div class="self-start">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
                             <select id="journalRank" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="all">All</option>
-                                <option value="a">A</option>
+                                <option value="a">Surgery</option>
+                                <option value="nurse">Nurse</option>
                             </select>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Surgery Type</label><select id="surgeryType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">None (Any Topic)</option><option value="hepatic">Hepatic Surgery</option><option value="gastric">Gastric Surgery</option><option value="pancreatic">Pancreatic Surgery</option><option value="colorectal">Colorectal Surgery</option><option value="esophageal">Esophageal Surgery</option></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Study Type</label><select id="studyType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">Any Type</option><option value="randomized_controlled">Randomized Controlled Trial</option><option value="meta">Meta-analysis</option><option value="cohort">Cohort</option><option value="case_control">Case-control</option><option value="systematic_review">Systematic Review</option></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Time Period</label><select id="timePeriod" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="5">Last 5 Years</option><option value="10" selected>Last 10 Years</option><option value="20">Last 20 Years</option><option value="30">Last 30 Years</option><option value="50">Last 50 Years</option><option value="all">All years</option></select></div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Article Type</label>
+                            <div class="relative group" id="studyTypeContainer">
+                                <button type="button" id="studyTypeButton" class="w-full px-4 py-2 text-left bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex justify-between items-center">
+                                    <span id="studyTypeButtonText" class="block truncate text-gray-700">Any Type</span>
+                                    <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform" id="studyTypeChevron"></i>
+                                </button>
+                                <!-- Hidden select for form compatibility -->
+                                <select id="studyType" multiple class="hidden">
+                                    <option value="case_reports">Case Reports</option>
+                                    <option value="classical_article">Classical Article</option>
+                                    <option value="clinical_study">Clinical Study</option>
+                                    <option value="comparative_study">Comparative Study</option>
+                                    <option value="controlled_clinical_trial">Controlled Clinical Trial</option>
+                                    <option value="Randomized_clinical_trial">Randomized_clinical Trial</option>
+                                    <option value="meta_analysis">Meta-Analysis</option>
+                                    <option value="multicenter_study">Multicenter Study</option>
+                                    <option value="network_meta_analysis">Network Meta-Analysis</option>
+                                    <option value="observational_study">Observational Study</option>
+                                    <option value="randomized_controlled_trial">Randomized Controlled Trial</option>
+                                    <option value="review">Review</option>
+                                    <option value="systematic_review">Systematic Review</option>
+                                    <option value="validation_study">Validation Study</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Time Period (Year Range)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="yearFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="From" min="1900" max="2030">
+                                <span class="text-gray-500">→</span>
+                                <input type="number" id="yearTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="To" min="1900" max="2030">
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Leave empty for last 10 years</p>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Page Size</label><select id="pageSize" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="50">50 per page</option><option value="100">100 per page</option><option value="200" selected>200 per page</option><option value="500">500 per page</option><option value="1000">1 000 per page</option><option value="5000">5 000 per page</option><option value="20000">20 000 per page</option></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Max Results</label><select id="maxResults" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="20000" selected>20 000 articles</option><option value="30000">30 000 articles</option><option value="40000">40 000 articles</option><option value="50000">50 000 articles</option></select></div>
+                    <!-- Hidden Page Size (used by JS internally) -->
+                    <select id="pageSize" class="hidden"><option value="200" selected>200</option></select>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Max Results</label><select id="maxResults" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="20000">20 000 articles</option><option value="50000">50 000 articles</option><option value="100000" selected>100 000 articles</option><option value="200000">200 000 articles</option></select></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Region Filter</label><select id="regionFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">Global (No Filter)</option><option value="north_america">North America</option><option value="europe">Europe</option><option value="asia">Asia</option><option value="africa">Africa</option><option value="south_america">South America</option><option value="oceania">Oceania</option></select></div>
                     </div>
-                    <div class="flex justify-between pt-2">
-                        <button type="reset" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center"><span class="mr-2" aria-hidden="true">↺</span> Reset</button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"><span class="mr-2" aria-hidden="true"></span> Search</button>
+                    <div class="flex justify-between items-center pt-2">
+                        <div class="flex items-center gap-3">
+                            <button type="reset" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center"><i class="fas fa-undo mr-2"></i> Reset</button>
+                            <button type="button" id="clearCacheHomeBtn" class="px-4 py-2 border border-red-300 rounded-lg text-red-600 hover:bg-red-50 flex items-center" title="Vider le cache des recherches"><i class="fas fa-trash-alt mr-2"></i> Clear Cache</button>
+                        </div>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"><i class="fas fa-search mr-2"></i> Search</button>
                     </div>
                 </form>
             </div>
             <div id="welcomeMessage" class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-100 p-8 text-center">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4 text-3xl">
-                    <span aria-hidden="true">🔍</span>
+                    <i class="fas fa-heartbeat text-blue-500"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to MedSearch v3.1</h2>
-                <p class="text-gray-600 mb-2">High-Impact Medical & Surgical Literature Search Platform</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to MedSearch v3.2</h2>
+                <p class="text-gray-600 mb-2">Medical & Surgical Literature Search Platform — Surgery + Nursing</p>
                 <p class="text-sm text-gray-500 max-w-2xl mx-auto mb-4">
-                    Search across 13 top-tier medical and surgical journals including <strong>NEJM</strong>, <strong>Lancet</strong>, 
-                    <strong>JAMA</strong>, and <strong>British Journal of Surgery</strong>. Enter keywords above to retrieve 
-                    real scientific articles with verified data, complete abstracts, and geographic insights.
+                    Search across <strong>13 top-tier surgical journals</strong> (NEJM, Lancet, JAMA, BJS…) 
+                    and <strong>144 nursing journals</strong> with unified geographic detection based on last author affiliation. 
+                    Smart caching, batch search, and formatted Excel export included.
                 </p>
-                <p class="text-xs text-gray-400 mb-4">
-                    © 2025 DRCI - CHU Clermont-Ferrand. All rights reserved.
-                </p>
-                <div class="flex flex-wrap justify-center gap-2">
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ 13 Top-Tier Journals</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Geographic Detection</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Complete Abstracts</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200">✓ Up to 50K Results</span>
+                <div class="flex flex-wrap justify-center gap-2 mb-4">
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-star text-yellow-500 mr-1"></i> 13 Surgical + 144 Nursing Journals</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-globe-americas text-green-500 mr-1"></i> Uniform Region Detection</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-database text-blue-500 mr-1"></i> Smart Cache (7 days)</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-file-excel text-green-600 mr-1"></i> Formatted Excel Export</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-bolt text-purple-500 mr-1"></i> Batch Search (up to 10)</span>
                 </div>
+                <p class="text-xs text-gray-400">
+                    © 2025-2026 DRCI - CHU Clermont-Ferrand. All rights reserved.
+                </p>
             </div>
             <!-- Progress Bar for Export -->
             <div id="exportProgressBar" class="hidden bg-white rounded-xl shadow-lg border border-blue-200 p-6">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-blue-600 animate-bounce" aria-hidden="true">⬇️</span>
-                        <span class="text-sm font-medium text-gray-900" id="exportProgressText">Récupération des articles...</span>
+                        <i class="fas fa-download text-blue-600 animate-bounce"></i>
+                        <span class="text-sm font-medium text-gray-900" id="exportProgressText">Journal recuperation...</span>
                     </div>
                     <span class="text-sm font-semibold text-blue-600" id="exportProgressPercent">0%</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2.5">
                     <div id="exportProgressBarFill" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
-                <p class="text-xs text-gray-500 mt-2" id="exportProgressDetails">Préparation...</p>
+                <p class="text-xs text-gray-500 mt-2" id="exportProgressDetails">Preparation...</p>
             </div>
             <div id="resultsSection" class="hidden space-y-6">
                 <div id="cacheAlert" class="hidden px-4 py-3 rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-700 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -182,7 +191,7 @@
                         <div class="flex items-center flex-wrap gap-3">
                             <span class="text-sm text-gray-500" id="resultCount">0 results</span>
                             <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center shadow-sm">
-                                <span class="mr-2" aria-hidden="true">📊</span> Excel
+                                <i class="fas fa-file-excel mr-2"></i> Excel
                             </button>
                         </div>
                     </div>
@@ -204,8 +213,12 @@
                 <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                     <div class="p-6 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div class="flex items-center flex-wrap gap-4">
-                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg" aria-hidden="true">📊</span><div><p class="text-sm font-medium text-gray-800">Analytics</p><p class="text-xs text-gray-500">Real-time overview</p></div></div>
-                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg" aria-hidden="true">🗺️</span><div><p class="text-sm font-medium text-gray-800">Geographic</p><p class="text-xs text-gray-500">Regional insights</p></div></div>
+                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center"><i class="fas fa-chart-bar text-blue-600 text-lg"></i></span><div><p class="text-sm font-medium text-gray-800">Analytics</p><p class="text-xs text-gray-500">Real-time overview</p></div></div>
+                            <div class="flex items-center space-x-2"><span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center"><i class="fas fa-globe-americas text-green-600 text-lg"></i></span><div><p class="text-sm font-medium text-gray-800">Geographic</p><p class="text-xs text-gray-500">Regional insights</p></div></div>
+                            <div id="searchStatusBadge" class="hidden flex items-center space-x-2 ml-4">
+                                <span id="searchStatusIcon" class="w-8 h-8 rounded-full flex items-center justify-center"></span>
+                                <span id="searchStatusText" class="text-sm font-medium"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -221,7 +234,7 @@
                     <div id="resultsGrid" class="space-y-4 p-4 md:p-6"></div>
                 </div>
                 <div id="emptyState" class="hidden bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center text-gray-500">
-                    <span class="text-3xl text-blue-400 mb-3" aria-hidden="true">🔎</span>
+                    <i class="fas fa-search text-blue-400 mb-3 text-3xl"></i>
                     <h3 class="text-lg font-semibold text-gray-800 mb-1">No studies found</h3>
                     <p class="text-sm">Try adjusting your filters or keywords to broaden the search.</p>
                 </div>
@@ -234,6 +247,87 @@
         </main>
     </div>
 </div>
+
+<!-- Article Type Selection Modal -->
+<div id="articleTypeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-filter mr-2 text-blue-600"></i>ARTICLE TYPE</h3>
+            <button id="closeArticleTypeModal" class="text-gray-500 hover:text-gray-700 text-2xl font-light" aria-label="Close">&times;</button>
+        </div>
+        <div class="p-5 overflow-y-auto max-h-[60vh]">
+            <div class="grid grid-cols-2 gap-x-8 gap-y-2">
+                <!-- Left Column -->
+                <div class="space-y-2">
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="case_reports" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Case Reports</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="classical_article" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Classical Article</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="clinical_study" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Clinical Study</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="comparative_study" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Comparative Study</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="controlled_clinical_trial" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Controlled Clinical Trial</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="Randomized_clinical_trial" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Randomized Clinical Trial</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="meta_analysis" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Meta-Analysis</span>
+                    </label>
+                </div>
+                <!-- Right Column -->
+                <div class="space-y-2">
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="multicenter_study" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Multicenter Study</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="network_meta_analysis" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Network Meta-Analysis</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="observational_study" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Observational Study</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="randomized_controlled_trial" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Randomized Controlled Trial</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="review" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Review</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="systematic_review" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Systematic Review</span>
+                    </label>
+                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" value="validation_study" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 study-type-checkbox">
+                        <span class="ml-3 text-sm text-gray-700">Validation Study</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+            <button id="cancelArticleType" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-medium">Cancel</button>
+            <button id="applyArticleType" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Apply</button>
+        </div>
+    </div>
+</div>
+
 <div id="articleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
         <div class="p-6">
@@ -249,15 +343,15 @@
                 <div class="col-span-2">
                     <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Abstract</h4><p class="text-gray-700" id="modalAbstract">Abstract text...</p></div>
                     
-                    <!-- ✨ NEW: Primary outcome & Adverse events section -->
+                    <!-- ✨ NEW: Automatically extracted clinical information -->
                     <div class="bg-purple-50 p-4 rounded-lg mb-4" id="modalOutcomesSection">
                         <h4 class="font-medium text-purple-900 mb-3 flex items-center gap-2">
-                            <span aria-hidden="true">🎯</span>
+                            <i class="fas fa-bullseye"></i>
                             Automatically extracted information
                         </h4>
                         <div id="modalPrimaryOutcome" class="hidden mb-3">
                             <div class="flex items-start gap-2 mb-1">
-                                <span class="mt-0.5" aria-hidden="true">⭐</span>
+                                <i class="fas fa-star text-purple-600 mt-0.5"></i>
                                 <p class="text-xs font-semibold text-purple-800">Primary outcome</p>
                                 <span id="modalPrimaryConfidence" class="ml-auto text-xs"></span>
                             </div>
@@ -265,15 +359,40 @@
                         </div>
                         <div id="modalAdverseEvents" class="hidden mb-3">
                             <div class="flex items-start gap-2 mb-1">
-                                <span class="mt-0.5" aria-hidden="true">⚠️</span>
+                                <i class="fas fa-exclamation-triangle text-red-600 mt-0.5"></i>
                                 <p class="text-xs font-semibold text-red-700">Adverse Events</p>
                                 <span id="modalAdverseEventsConfidence" class="ml-auto text-xs"></span>
                             </div>
                             <p class="text-sm text-gray-700 bg-red-50 border border-red-100 p-3 rounded ml-6" id="modalAdverseEventsText"></p>
                         </div>
+                        <div id="modalEfficacy" class="hidden mb-3">
+                            <div class="flex items-start gap-2 mb-1">
+                                <i class="fas fa-chart-line text-green-600 mt-0.5"></i>
+                                <p class="text-xs font-semibold text-green-700">Efficacy/Effectiveness</p>
+                                <span id="modalEfficacyConfidence" class="ml-auto text-xs"></span>
+                            </div>
+                            <p class="text-sm text-gray-700 bg-green-50 border border-green-100 p-3 rounded ml-6" id="modalEfficacyText"></p>
+                        </div>
+                        <div id="modalResults" class="hidden mb-3">
+                            <div class="flex items-start gap-2 mb-1">
+                                <i class="fas fa-flask text-blue-600 mt-0.5"></i>
+                                <p class="text-xs font-semibold text-blue-700">Results</p>
+                                <span id="modalResultsConfidence" class="ml-auto text-xs"></span>
+                            </div>
+                            <p class="text-sm text-gray-700 bg-blue-50 border border-blue-100 p-3 rounded ml-6" id="modalResultsText"></p>
+                        </div>
+                        <div id="modalSafety" class="hidden mb-3">
+                            <div class="flex items-start gap-2 mb-1">
+                                <i class="fas fa-shield-alt text-teal-600 mt-0.5"></i>
+                                <p class="text-xs font-semibold text-teal-700">Safety</p>
+                                <span id="modalSafetyConfidence" class="ml-auto text-xs"></span>
+                            </div>
+                            <p class="text-sm text-gray-700 bg-teal-50 border border-teal-100 p-3 rounded ml-6" id="modalSafetyText"></p>
+                        </div>
+
                         <div id="modalNoOutcomes" class="hidden">
                             <p class="text-sm text-gray-500 italic flex items-center gap-2">
-                                <span aria-hidden="true">ℹ️</span>
+                                <i class="fas fa-info-circle"></i>
                                 No information automatically identified in this abstract.
                             </p>
                         </div>
@@ -288,8 +407,8 @@
                 </div>
                 <div>
                     <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Quality Assessment</h4><div class="flex items-center mb-2"><div class="w-3/4 bg-gray-200 rounded-full h-2.5 mr-2"><div class="bg-green-500 h-2.5 rounded-full" style="width: 85%"></div></div><span class="text-sm font-medium text-gray-700">85%</span></div><p class="text-sm text-gray-600">Auto-generated quality approximation</p></div>
-                    <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Geographic Data</h4><div class="flex items-center mb-1"><span class="mr-2" aria-hidden="true">📍</span><span class="text-gray-700" id="modalCountry">—</span></div><div class="flex items-center"><span class="mr-2" aria-hidden="true">🏛️</span><span class="text-gray-700" id="modalInstitution">—</span></div></div>
-                    <div class="bg-gray-50 p-4 rounded-lg"><h4 class="font-medium text-gray-800 mb-2">Actions</h4><button class="w-full mb-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center" id="viewPubmed"><span class="mr-2" aria-hidden="true">🔗</span> View on PubMed</button><button class="w-full px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 flex items-center justify-center" id="saveArticleBtn"><span class="mr-2" aria-hidden="true">🔖</span> Save</button></div>
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4"><h4 class="font-medium text-gray-800 mb-2">Geographic Data</h4><div class="flex items-center mb-1"><i class="fas fa-map-marker-alt mr-2 text-red-500"></i><span class="text-gray-700" id="modalCountry">—</span></div><div class="flex items-center"><i class="fas fa-university mr-2 text-gray-500"></i><span class="text-gray-700" id="modalInstitution">—</span></div></div>
+                    <div class="bg-gray-50 p-4 rounded-lg"><h4 class="font-medium text-gray-800 mb-2">Actions</h4><button class="w-full mb-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center" id="viewPubmed"><i class="fas fa-external-link-alt mr-2"></i> View on PubMed</button><button class="w-full px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 flex items-center justify-center" id="saveArticleBtn"><i class="fas fa-bookmark mr-2"></i> Save</button></div>
                 </div>
             </div>
         </div>
@@ -301,7 +420,7 @@
 const STORAGE_KEY = 'medSearchSavedArticles';
 const numberFormatter = new Intl.NumberFormat('en-US');
 
-// Mapping des types de chirurgie vers leurs mots-clés PubMed
+// Mapping of surgery types to PubMed keywords
 const SURGERY_KEYWORDS = {
     'hepatic': ['Hepatectomy', 'liver surgery', 'hepatic resection', 'hepatic surgery'],
     'gastric': ['Gastric surgery', 'gastrectomy'],
@@ -323,6 +442,7 @@ const elements = {
     resultsGrid: document.getElementById('resultsGrid'),
     resultsContainer: document.getElementById('resultsContainer'),
     clearCacheBtn: document.getElementById('clearCacheBtn'),
+    clearCacheHomeBtn: document.getElementById('clearCacheHomeBtn'),
     quickFilters: Array.from(document.querySelectorAll('.quick-filter')),
     paginationSummary: document.getElementById('paginationSummary'),
     pageIndicator: document.getElementById('pageIndicator'),
@@ -351,15 +471,16 @@ const state = {
     currentResults: [], // Stores unfiltered results for client-side filtering
     pagination: {
         page: 1,
-        pageSize: parseInt(elements.pageSizeSelect?.value, 10) || 200,
+        pageSize: parseInt(elements.pageSizeSelect?.value, 10) || 500,
         total: 0,
         pageCount: 1,
         returned: 0
     },
     saved: new Set(loadSavedArticles()),
-    hidden: new Set(), // Articles cachés via le bouton X
+    hidden: new Set(), // Articles hidden via X button
     currentArticle: null,
-    chartInstances: { year: null, type: null, quality: null }
+    chartInstances: { year: null, type: null, quality: null },
+    yearFilter: null // Interactive year filter
 };
 
 if (sidebarToggle && sidebar) {
@@ -415,7 +536,7 @@ function updateSavedIndicators() {
 function updateModalSaveState() {
     if (!elements.saveArticleBtn) return;
     const saved = isArticleSaved(state.currentArticle);
-    elements.saveArticleBtn.innerHTML = `<span class="mr-2" aria-hidden="true">🔖</span>${saved ? 'Saved' : 'Save'}`;
+    elements.saveArticleBtn.innerHTML = `<i class="fas fa-bookmark mr-2" aria-hidden="true"></i>${saved ? 'Saved' : 'Save'}`;
     elements.saveArticleBtn.classList.toggle('bg-gray-200', !saved);
     elements.saveArticleBtn.classList.toggle('bg-yellow-100', saved);
     elements.saveArticleBtn.classList.toggle('text-gray-700', !saved);
@@ -454,6 +575,39 @@ function clearStatus() {
     elements.statusBanner?.classList.add('hidden');
 }
 
+function updateSearchStatus(status) {
+    const badge = document.getElementById('searchStatusBadge');
+    const icon = document.getElementById('searchStatusIcon');
+    const text = document.getElementById('searchStatusText');
+    
+    if (!badge || !icon || !text) return;
+    
+    badge.classList.remove('hidden');
+    
+    switch(status) {
+        case 'searching':
+            icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-blue-100';
+            icon.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-600"></i>';
+            text.className = 'text-sm font-medium text-blue-600';
+            text.textContent = 'Searching...';
+            break;
+        case 'finished':
+            icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-green-100';
+            icon.innerHTML = '<i class="fas fa-check text-green-600"></i>';
+            text.className = 'text-sm font-medium text-green-600';
+            text.textContent = 'Finished';
+            break;
+        case 'error':
+            icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-red-100';
+            icon.innerHTML = '<i class="fas fa-times text-red-600"></i>';
+            text.className = 'text-sm font-medium text-red-600';
+            text.textContent = 'Error';
+            break;
+        default:
+            badge.classList.add('hidden');
+    }
+}
+
 function getRegionName(regionCode) {
     const regionNames = {
         'north_america': 'North America',
@@ -484,14 +638,14 @@ function getFormPayload() {
     const maxResults = parseInt(elements.maxResultsSelect?.value, 10) || 20000;
     state.pagination.pageSize = pageSize;
     
-    // Récupérer les mots-clés de base
+    // Get base keywords
     let keywords = document.getElementById('keywords').value.trim();
     
-    // Ajouter les mots-clés chirurgicaux si un type est sélectionné
+    // Add surgery keywords if a type is selected
     const surgeryType = document.getElementById('surgeryType').value;
     if (surgeryType && SURGERY_KEYWORDS[surgeryType]) {
         const surgeryKeywords = SURGERY_KEYWORDS[surgeryType].join(' OR ');
-        // Combiner avec les keywords existants
+        // Combine with existing keywords
         if (keywords) {
             keywords = `(${keywords}) AND (${surgeryKeywords})`;
         } else {
@@ -501,14 +655,30 @@ function getFormPayload() {
     
     const journalRank = document.getElementById('journalRank').value;
     
+    // Get multiple values for studyType
+    const studyTypeSelect = document.getElementById('studyType');
+    const selectedStudyTypes = Array.from(studyTypeSelect.selectedOptions).map(option => option.value);
+    
+    // Get custom year range
+    const yearFrom = document.getElementById('yearFrom')?.value;
+    const yearTo = document.getElementById('yearTo')?.value;
+    
+    // Determine period: if custom years, use those, otherwise default to 10 years
+    let timePeriod = '10'; // default
+    if (yearFrom || yearTo) {
+        timePeriod = ''; // Disable time_period if custom years
+    }
+
     return {
         keywords: keywords,
-        studyType: document.getElementById('studyType').value,
-        timePeriod: document.getElementById('timePeriod').value,
+        studyType: selectedStudyTypes, // Send as array
+        timePeriod: timePeriod,
+        yearFrom: yearFrom ? parseInt(yearFrom, 10) : null,
+        yearTo: yearTo ? parseInt(yearTo, 10) : null,
         journalFilter: '', // Search in all 13 target journals by default
         regionFilter: document.getElementById('regionFilter').value,
-        surgeryType: surgeryType, // Ajout pour tracking
-        journalRank: journalRank, // A pour top 13 revues, all pour toutes
+        surgeryType: surgeryType, // Added for tracking
+        journalRank: journalRank, // A for top 13 journals, all for all
         page: state.pagination.page,
         pageSize,
         maxResults
@@ -564,7 +734,7 @@ function updatePagination(meta) {
     setButtonDisabled(elements.lastPageBtn, page >= pageCount);
 }
 
-// Fonction pour obtenir les articles visibles (non cachés)
+// Get visible articles (not hidden)
 function getVisibleArticles(articles) {
     return articles.filter(article => {
         const key = articleKey(article);
@@ -572,24 +742,44 @@ function getVisibleArticles(articles) {
     });
 }
 
-// **NEW: Appliquer les filtres côté client (notamment le filtre région)**
+// Apply client-side filters (region and year filters)
 function applyClientSideFilters(articles) {
     const regionFilter = document.getElementById('regionFilter')?.value;
+    const journalRank = document.getElementById('journalRank')?.value;
+    const yearFilter = state.yearFilter;
     
-    if (!regionFilter) {
-        return articles; // Pas de filtre région, retourner tous les articles
+    // Get custom years for strict filtering
+    const yearFrom = parseInt(document.getElementById('yearFrom')?.value, 10) || null;
+    const yearTo = parseInt(document.getElementById('yearTo')?.value, 10) || null;
+    
+    let filtered = articles;
+
+    // 0. Strict filter on year range [yearFrom, yearTo]
+    if (yearFrom || yearTo) {
+        filtered = filtered.filter(article => {
+            const articleYear = article.year;
+            if (!articleYear) return false; // Exclude articles without year
+            if (yearFrom && articleYear < yearFrom) return false;
+            if (yearTo && articleYear > yearTo) return false;
+            return true;
+        });
+    }
+
+    // 1. Region Filter
+    if (regionFilter) {
+        filtered = filtered.filter(article => {
+            if (!article.region) return false;
+            return article.region.toLowerCase() === regionFilter.toLowerCase();
+        });
+    }
+
+    // 2. Year Filter (interactive via chart)
+    if (yearFilter) {
+        filtered = filtered.filter(article => {
+            return article.year == yearFilter;
+        });
     }
     
-    // Filtrer les articles par région
-    const filtered = articles.filter(article => {
-        // Si l'article n'a pas de région définie, on l'inclut quand même
-        if (!article.region) return true;
-        
-        // Comparer la région de l'article avec le filtre sélectionné
-        return article.region.toLowerCase() === regionFilter.toLowerCase();
-    });
-    
-    console.log(`[Filter] Region filter "${regionFilter}": ${filtered.length}/${articles.length} articles match`);
     return filtered;
 }
 
@@ -598,16 +788,6 @@ function renderResults(data) {
     state.results = data;
     elements.resultsGrid.innerHTML = '';
 
-    console.log('[renderResults] Nombre d\'articles:', data.length);
-    if (data.length > 0) {
-        console.log('[renderResults] Premier article:', {
-            title: data[0].title,
-            pmid: data[0].pmid,
-            doi: data[0].doi,
-            authors: data[0].authors
-        });
-    }
-
     if (!data.length) {
         toggleEmptyState(false);
         updateSavedIndicators();
@@ -615,9 +795,6 @@ function renderResults(data) {
     }
 
     data.forEach((article, index) => {
-        if (index === 0) {
-            console.log('[renderResults] Rendu du premier article avec titre:', article.title);
-        }
         const key = articleKey(article);
         
         // Gestion intelligente du nombre de participants avec confiance
@@ -631,18 +808,16 @@ function renderResults(data) {
                 'unknown': 'text-gray-600'
             };
             const confidenceIcons = {
-                'high': '✓',
-                'medium': '~',
-                'low': '?',
+                'high': 'fa-check-circle',
+                'medium': 'fa-exclamation-circle',
+                'low': 'fa-question-circle',
                 'unknown': ''
             };
             
             sampleSizeHtml = `
                 <span class="flex items-center gap-1">
                     <span class="font-medium">${numberFormatter.format(article.sample_size)}</span>
-                    <span class="text-xs ${confidenceColors[confidence]}" title="Source: ${article.sample_size_source || 'N/A'}">
-                        ${confidenceIcons[confidence]}
-                    </span>
+                    <i class="fas ${confidenceIcons[confidence]} text-xs ${confidenceColors[confidence]}" title="Source: ${article.sample_size_source || 'N/A'}"></i>
                 </span>
             `;
         }
@@ -664,15 +839,15 @@ function renderResults(data) {
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs">
-                        <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1"><span aria-hidden="true">📅</span><span>${article.year || 'N/A'}</span></span>
-                        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 flex items-center gap-1"><span aria-hidden="true">🧪</span><span>${article.study_type || 'Unknown type'}</span></span>
+                        <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1"><i class="fas fa-calendar-alt text-gray-400"></i><span>${article.year || 'N/A'}</span></span>
+                        <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 flex items-center gap-1"><i class="fas fa-flask"></i><span>${article.study_type || 'Unknown type'}</span></span>
                         <span class="saved-badge px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 hidden">Saved</span>
-                        ${article.has_outcomes ? `<span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 flex items-center gap-1" title="Primary outcome automatically extracted"><span aria-hidden="true">🎯</span><span>Outcome extracted</span></span>` : ''}
+                        ${article.has_outcomes ? `<span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 flex items-center gap-1" title="Primary outcome automatically extracted"><i class="fas fa-bullseye"></i><span>Outcome extracted</span></span>` : ''}
                     </div>
                     ${article.outcome_summary ? `
                         <div class="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
                             <div class="flex items-start gap-2">
-                                <span class="text-purple-600 mt-1 text-sm" aria-hidden="true">🎯</span>
+                                <i class="fas fa-bullseye text-purple-600 mt-1 text-sm"></i>
                                 <div>
                                     <p class="text-xs font-semibold text-purple-900 mb-1">Primary outcome identified:</p>
                                     <p class="text-xs text-purple-800 leading-relaxed">${article.outcome_summary}</p>
@@ -684,7 +859,7 @@ function renderResults(data) {
                 <div class="flex items-center gap-4 self-start md:self-center">
                     <div class="text-right">
                         <div class="flex items-center justify-end gap-2 text-sm font-medium text-gray-700">
-                            <span class="text-blue-500 text-xs" aria-hidden="true">👥</span>
+                            <i class="fas fa-users text-blue-500 text-xs"></i>
                             <span>${sampleSizeHtml}</span>
                         </div>
                         <p class="text-xs text-gray-500">${getRegionName(article.region)}</p>
@@ -705,25 +880,24 @@ function renderResults(data) {
             });
         }
         
-        // Bouton de fermeture (X)
+        // Close button (X)
         const closeBtn = card.querySelector('.close-article');
         if (closeBtn) {
             closeBtn.addEventListener('click', event => {
                 event.stopPropagation();
                 
-                // Ajouter l'article au Set des articles cachés
+                // Add article to hidden set
                 state.hidden.add(key);
-                console.log('[Close] Article caché:', article.title, '| Total cachés:', state.hidden.size);
                 
-                // Animation de fermeture
+                // Close animation
                 card.style.transition = 'all 0.3s ease-out';
                 card.style.transform = 'translateX(100%)';
                 card.style.opacity = '0';
                 
-                // Suppression après l'animation
+                // Remove after animation
                 setTimeout(() => {
                     card.remove();
-                    // Vérifier s'il reste des articles
+                    // Check if any articles remain
                     if (elements.resultsGrid.children.length === 0) {
                         toggleEmptyState(false);
                     }
@@ -746,7 +920,7 @@ function showArticleModal(article) {
     document.getElementById('modalJournal').textContent = `${article.journal || 'Unknown journal'}, ${article.year || '—'}`;
     // Abstract is set later with highlighting
     document.getElementById('modalStudyType').textContent = article.study_type || '—';
-    // Affichage détaillé dans le modal
+    // Detailed display in modal
     const modalSampleEl = document.getElementById('modalSampleSize');
     if (typeof article.sample_size === 'number') {
         const confidence = article.sample_size_confidence || 'unknown';
@@ -797,12 +971,12 @@ function showArticleModal(article) {
     const getConfidenceBadge = (confidence) => {
         const badges = {
             'high': { color: 'text-green-600', bg: 'bg-green-50', icon: 'fa-check-circle', label: 'High confidence' },
-            'medium': { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: 'fa-exclamation-circle', label: 'Medium confidence' },
+            'medium': { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: 'fa-exclamation-triangle', label: 'Medium confidence' },
             'low': { color: 'text-orange-600', bg: 'bg-orange-50', icon: 'fa-question-circle', label: 'Low confidence' }
         };
         const badge = badges[confidence] || badges['low'];
         return `<span class="px-2 py-1 rounded-full ${badge.bg} ${badge.color} text-xs flex items-center gap-1">
-            <span aria-hidden="true">${confidence === 'high' ? '✅' : confidence === 'medium' ? '⚠️' : '❓'}</span>${badge.label}
+            <i class="fas ${badge.icon}" aria-hidden="true"></i> ${badge.label}
         </span>`;
     };
     
@@ -819,7 +993,8 @@ function showArticleModal(article) {
             const aeText = adverseEvents.substring(0, 100); // First 100 chars for matching
             const aePattern = escapeRegex(aeText.substring(0, 50));
             try {
-                const aeRegex = new RegExp(`(${aePattern}[^.]*\\.)`, 'gi');
+                // Flexible pattern: match until period OR end of text
+                const aeRegex = new RegExp(`(${aePattern}[^.]*(?:\\.|$))`, 'gi');
                 highlighted = highlighted.replace(aeRegex, '<mark class="bg-red-100 text-red-900 px-0.5 rounded">$1</mark>');
             } catch(e) {}
         }
@@ -829,7 +1004,8 @@ function showArticleModal(article) {
             const poText = primaryOutcome.substring(0, 100);
             const poPattern = escapeRegex(poText.substring(0, 50));
             try {
-                const poRegex = new RegExp(`(${poPattern}[^.]*\\.)`, 'gi');
+                // Flexible pattern: match until period OR end of text
+                const poRegex = new RegExp(`(${poPattern}[^.]*(?:\\.|$))`, 'gi');
                 highlighted = highlighted.replace(poRegex, '<mark class="bg-purple-100 text-purple-900 px-0.5 rounded">$1</mark>');
             } catch(e) {}
         }
@@ -852,6 +1028,21 @@ function showArticleModal(article) {
     const adverseEventsContainer = document.getElementById('modalAdverseEvents');
     const adverseEventsText = document.getElementById('modalAdverseEventsText');
     const adverseEventsConfidenceEl = document.getElementById('modalAdverseEventsConfidence');
+    
+    // Display efficacy
+    const efficacyContainer = document.getElementById('modalEfficacy');
+    const efficacyText = document.getElementById('modalEfficacyText');
+    const efficacyConfidenceEl = document.getElementById('modalEfficacyConfidence');
+    
+    // Display results
+    const resultsContainer = document.getElementById('modalResults');
+    const resultsText = document.getElementById('modalResultsText');
+    const resultsConfidenceEl = document.getElementById('modalResultsConfidence');
+    
+    // Display safety
+    const safetyContainer = document.getElementById('modalSafety');
+    const safetyText = document.getElementById('modalSafetyText');
+    const safetyConfidenceEl = document.getElementById('modalSafetyConfidence');
     
     let hasAnyInfo = false;
     
@@ -877,6 +1068,39 @@ function showArticleModal(article) {
         adverseEventsContainer.classList.add('hidden');
     }
     
+    if (article.efficacy) {
+        efficacyContainer.classList.remove('hidden');
+        efficacyText.textContent = article.efficacy;
+        if (article.efficacy_confidence && efficacyConfidenceEl) {
+            efficacyConfidenceEl.innerHTML = getConfidenceBadge(article.efficacy_confidence);
+        }
+        hasAnyInfo = true;
+    } else {
+        efficacyContainer.classList.add('hidden');
+    }
+    
+    if (article.results) {
+        resultsContainer.classList.remove('hidden');
+        resultsText.textContent = article.results;
+        if (article.results_confidence && resultsConfidenceEl) {
+            resultsConfidenceEl.innerHTML = getConfidenceBadge(article.results_confidence);
+        }
+        hasAnyInfo = true;
+    } else {
+        resultsContainer.classList.add('hidden');
+    }
+    
+    if (article.safety) {
+        safetyContainer.classList.remove('hidden');
+        safetyText.textContent = article.safety;
+        if (article.safety_confidence && safetyConfidenceEl) {
+            safetyConfidenceEl.innerHTML = getConfidenceBadge(article.safety_confidence);
+        }
+        hasAnyInfo = true;
+    } else {
+        safetyContainer.classList.add('hidden');
+    }
+    
     if (hasAnyInfo) {
         noOutcomesMsg.classList.add('hidden');
     } else {
@@ -898,7 +1122,7 @@ function destroyCharts() {
 
 
 
-// Système de classification des revues médicales
+// Medical journal ranking system
 function getJournalRanking(journalName) {
     const aplus_journals = [
         'New England Journal of Medicine', 'The Lancet', 'Journal of the American Medical Association',
@@ -919,24 +1143,170 @@ function getJournalRanking(journalName) {
         'European Journal of Heart Failure', 'Thorax', 'Gut', 'Brain', 'Journal of Neuroscience'
     ];
     
-    // Normaliser le nom de la revue pour la comparaison
+    // Normalize journal name for comparison
     const normalizedJournal = journalName.toLowerCase().trim();
     
-    // Vérifier A+
+    // Check A+
     for (let journal of aplus_journals) {
         if (normalizedJournal.includes(journal.toLowerCase()) || journal.toLowerCase().includes(normalizedJournal)) {
             return 'A+';
         }
     }
     
-    // Vérifier A
+    // Check A
     for (let journal of a_journals) {
         if (normalizedJournal.includes(journal.toLowerCase()) || journal.toLowerCase().includes(normalizedJournal)) {
             return 'A';
         }
     }
     
-    return 'B'; // Par défaut
+    return 'B'; // Default
+}
+
+// Variable to store all articles fetched for chart
+let allArticlesForChart = [];
+let chartFetchAbortController = null;
+
+/**
+ * Fetches more articles when a region filter is active
+ * Updates display progressively until we have enough filtered results
+ */
+async function fetchMoreArticlesForRegionFilter(searchParams, totalArticles, initialFiltered) {
+    const regionFilter = document.getElementById('regionFilter')?.value;
+    if (!regionFilter) return; // No region filter, no need to fetch more
+    
+    // Cancel previous fetch if in progress
+    if (chartFetchAbortController) {
+        chartFetchAbortController.abort();
+    }
+    chartFetchAbortController = new AbortController();
+    
+    // Goal: fetch at least 100 articles after filtering, or max available
+    const targetFiltered = Math.min(200, totalArticles);
+    const maxToFetch = Math.min(totalArticles, parseInt(elements.maxResultsSelect?.value, 10) || 5000);
+    const pageSize = 200;
+    const maxPages = Math.ceil(maxToFetch / pageSize);
+    
+    // Start with already fetched articles
+    let allFetchedArticles = [...state.currentResults];
+    let currentFilteredCount = initialFiltered.length;
+    
+    // Show progressive loading message
+    showStatus(`Loading ${regionFilter} articles... (${currentFilteredCount} found)`, 'info');
+    
+    try {
+        for (let page = 2; page <= maxPages && currentFilteredCount < targetFiltered; page++) {
+            // Check if aborted
+            if (chartFetchAbortController.signal.aborted) {
+                return;
+            }
+            
+            const payload = { ...searchParams, page, pageSize };
+            const response = await fetch('/api/search/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: chartFetchAbortController.signal
+            });
+            
+            if (!response.ok) continue;
+            
+            const json = await response.json();
+            if (json.status === 'success' && json.data) {
+                allFetchedArticles.push(...json.data);
+                state.currentResults = allFetchedArticles;
+                
+                // Apply filter and update display
+                const filteredArticles = applyClientSideFilters(allFetchedArticles);
+                currentFilteredCount = filteredArticles.length;
+                
+                // Update display progressively
+                renderResults(filteredArticles);
+                updateCharts(filteredArticles);
+                updatePagination({
+                    page: 1,
+                    page_size: filteredArticles.length,
+                    total: filteredArticles.length,
+                    page_count: 1,
+                    returned: filteredArticles.length
+                });
+                
+                const progress = Math.round((page / maxPages) * 100);
+                showStatus(`Loading ${getRegionName(regionFilter)} articles... ${currentFilteredCount} found (${progress}%)`, 'info');
+            }
+            
+            // Small pause to avoid overloading the API
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Completed
+        const filteredArticles = applyClientSideFilters(state.currentResults);
+        showStatus(`${filteredArticles.length} ${getRegionName(regionFilter)} articles found out of ${state.currentResults.length} total`, 'success');
+        updateSearchStatus('finished');
+        
+    } catch (error) {
+        // Ignore abort errors - but still mark finished if not aborted intentionally
+        if (error.name !== 'AbortError') {
+            updateSearchStatus('finished');
+        }
+    }
+}
+
+/**
+ * Fetches ALL articles to display a complete chart
+ * Runs in background after initial search
+ */
+async function fetchAllArticlesForChart(searchParams, totalArticles) {
+    // Cancel previous fetch if in progress
+    if (chartFetchAbortController) {
+        chartFetchAbortController.abort();
+    }
+    chartFetchAbortController = new AbortController();
+    
+    const maxToFetch = Math.min(totalArticles, parseInt(elements.maxResultsSelect?.value, 10) || 20000);
+    const pageSize = 200;
+    const totalPages = Math.ceil(maxToFetch / pageSize);
+    
+    allArticlesForChart = [];
+    
+    try {
+        for (let page = 1; page <= totalPages; page++) {
+            // Check if aborted
+            if (chartFetchAbortController.signal.aborted) {
+                return;
+            }
+            
+            const payload = { ...searchParams, page, pageSize };
+            const response = await fetch('/api/search/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: chartFetchAbortController.signal
+            });
+            
+            if (!response.ok) continue;
+            
+            const json = await response.json();
+            if (json.status === 'success' && json.data) {
+                allArticlesForChart.push(...json.data);
+            }
+            
+            // Update chart progressively (every 5 pages)
+            if (page % 5 === 0 || page === totalPages) {
+                const filteredForChart = applyClientSideFilters(allArticlesForChart);
+                updateCharts(filteredForChart);
+            }
+        }
+        
+        // Mark search as finished after all pages fetched
+        updateSearchStatus('finished');
+        
+    } catch (error) {
+        // Ignore fetch errors (aborted) - but still mark finished if not aborted intentionally
+        if (error.name !== 'AbortError') {
+            updateSearchStatus('finished');
+        }
+    }
 }
 
 function updateCharts(data) {
@@ -952,8 +1322,14 @@ function updateCharts(data) {
     const yearsCount = {};
     
     data.forEach(article => {
-        yearsCount[article.year] = (yearsCount[article.year] || 0) + 1;
+        if (article.year) {
+            yearsCount[article.year] = (yearsCount[article.year] || 0) + 1;
+        }
     });
+    
+    // Sort years chronologically
+    const sortedYears = Object.keys(yearsCount).sort();
+    const sortedCounts = sortedYears.map(year => yearsCount[year]);
 
     destroyCharts();
     chartsWrapper.hidden = false;
@@ -964,40 +1340,121 @@ function updateCharts(data) {
         state.chartInstances.year = new Chart(yearCtx, {
             type: 'line',
             data: {
-                labels: Object.keys(yearsCount),
+                labels: sortedYears,
                 datasets: [{
                     label: 'Publications',
-                    data: Object.values(yearsCount),
+                    data: sortedCounts,
                     borderColor: 'rgba(59,130,246,1)',
                     backgroundColor: 'rgba(59,130,246,0.12)',
                     tension: 0.35,
-                    fill: true
+                    fill: true,
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    pointHitRadius: 20 // Zone de clic agrandie
                 }]
             },
-            options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+            options: { 
+                legend: { display: false }, // v2 compatibility
+                plugins: { 
+                    legend: { display: false }, // v3 compatibility
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                // Support v3 (context.parsed.y) and v2 (context.yLabel)
+                                const val = context.parsed ? context.parsed.y : (context.yLabel || context.raw);
+                                return `${val} articles (Click to filter)`;
+                            }
+                        }
+                    }
+                }, 
+                responsive: true, 
+                maintainAspectRatio: false,
+                tooltips: { // v2 compatibility
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            return `${tooltipItem.yLabel} articles (Click to filter)`;
+                        }
+                    }
+                },
+                onClick: function(evt, elements) {
+                    const chart = state.chartInstances.year;
+                    if (!chart) return;
+                    
+                    let activePoints = elements;
+                    
+                    // Fallback pour Chart.js v2 si elements est vide
+                    if ((!activePoints || !activePoints.length) && chart.getElementsAtEvent) {
+                        activePoints = chart.getElementsAtEvent(evt);
+                    }
+                    
+                    if (activePoints && activePoints.length > 0) {
+                        const firstPoint = activePoints[0];
+                        // Support v2 (_index) et v3 (index)
+                        const index = firstPoint.index !== undefined ? firstPoint.index : firstPoint._index;
+                        
+                        if (index !== undefined) {
+                            const year = chart.data.labels[index];
+                            
+                            // Toggle filter
+                            if (state.yearFilter == year) {
+                                state.yearFilter = null;
+                                showStatus('Year filter cleared.', 'info');
+                            } else {
+                                state.yearFilter = year;
+                                showStatus(`Filtering results for year ${year} (Click point again to reset)`, 'success');
+                            }
+                            
+                            // Reapply filters
+                            const filteredArticles = applyClientSideFilters(state.currentResults);
+                            renderResults(filteredArticles);
+                            
+                            // Update pagination
+                            const totalAfter = filteredArticles.length;
+                            if (state.yearFilter) {
+                                updatePagination({
+                                    page: 1,
+                                    page_size: totalAfter,
+                                    total: totalAfter,
+                                    page_count: 1,
+                                    returned: totalAfter
+                                });
+                            } else {
+                                const totalBefore = state.currentResults.length;
+                                updatePagination({
+                                    page: 1,
+                                    page_size: state.pagination.pageSize,
+                                    total: totalBefore,
+                                    page_count: Math.ceil(totalBefore / state.pagination.pageSize),
+                                    returned: Math.min(state.pagination.pageSize, totalBefore)
+                                });
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 }
 
-// **NEW: Détection visuelle du mode batch en temps réel**
+// Visual batch mode detection in real-time
 function detectBatchMode() {
     const keywordsInput = document.getElementById('keywords').value.trim();
     const batchHint = document.getElementById('batchHint');
     const batchDetected = document.getElementById('batchDetected');
     const batchCount = document.getElementById('batchCount');
     
-    // Détecter si multiple queries (séparées par ; ou retour à la ligne)
-    // Remplacer les retours à la ligne par des points-virgules
+    // Detect multiple queries (separated by ; or newline)
+    // Replace newlines with semicolons
     const normalizedInput = keywordsInput.replace(/\n+/g, ';');
     const queries = normalizedInput.split(';').map(q => q.trim()).filter(q => q.length > 0);
     
     if (queries.length > 1) {
-        // Mode batch détecté
+        // Batch mode detected
         batchHint.classList.add('hidden');
         batchDetected.classList.remove('hidden');
         batchCount.textContent = Math.min(queries.length, 10); // Max 10
     } else {
-        // Mode normal
+        // Normal mode
         batchHint.classList.remove('hidden');
         batchDetected.classList.add('hidden');
     }
@@ -1008,55 +1465,60 @@ async function performSearch({ page } = {}) {
         state.pagination.page = page;
     }
     
-    // **NEW: Détection automatique batch search**
+    // Update search status to 'Searching...'
+    updateSearchStatus('searching');
+    
+    // Cancel chart fetch in progress if new search
+    if (chartFetchAbortController) {
+        chartFetchAbortController.abort();
+        chartFetchAbortController = null;
+    }
+    
+    // Automatic batch search detection
     const keywordsInput = document.getElementById('keywords').value.trim();
     
-    // Détecter si multiple queries (séparées par ; ou retour à la ligne)
-    // Remplacer les retours à la ligne par des points-virgules
+    // Detect multiple queries (separated by ; or newline)
+    // Replace newlines with semicolons
     const normalizedInput = keywordsInput.replace(/\n+/g, ';');
     const queries = normalizedInput.split(';').map(q => q.trim()).filter(q => q.length > 0);
     
     if (queries.length > 1) {
-        // Mode BATCH détecté automatiquement
+        // BATCH mode detected automatically
         return performBatchSearch(queries);
     }
     
-    // Mode SINGLE (normal)
+    // SINGLE mode (normal)
     const payload = getFormPayload();
     payload.page = state.pagination.page;
     payload.pageSize = state.pagination.pageSize;
     
+    // Include client-side filters in export parameters
+    payload.regionFilter = document.getElementById('regionFilter')?.value || null;
+    payload.yearFrom = parseInt(document.getElementById('yearFrom')?.value, 10) || null;
+    payload.yearTo = parseInt(document.getElementById('yearTo')?.value, 10) || null;
+    
     // Save parameters for full export
     state.lastSearchParams = { ...payload };
     
-    // Réinitialiser les articles cachés lors d'une nouvelle recherche (page 1)
+    // Reset hidden articles on new search (page 1)
     if (state.pagination.page === 1) {
         state.hidden.clear();
-        console.log('[Search] Articles cachés réinitialisés pour nouvelle recherche');
+        state.yearFilter = null;
     }
 
-    // Cacher le message de bienvenue
+    // Hide welcome message
     const welcomeMsg = document.getElementById('welcomeMessage');
     if (welcomeMsg) welcomeMsg.classList.add('hidden');
 
     setLoading(true);
     try {
         clearStatus();
-        console.log('[performSearch] Envoi requête avec payload:', payload);
-        const response = await fetch('/api/search', {
+        const response = await fetch('/api/search/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
         const json = await response.json();
-        console.log('[performSearch] Réponse reçue:', {
-            status: json.status,
-            source: json.source,
-            total: json.total,
-            returned: json.returned,
-            message: json.message,
-            firstArticleTitle: json.data?.[0]?.title
-        });
         if (!response.ok || json.status !== 'success') {
             throw new Error(json.message || 'Search failed');
         }
@@ -1064,29 +1526,51 @@ async function performSearch({ page } = {}) {
         // Store unfiltered results for client-side filtering
         state.currentResults = json.data || [];
         
-        // **NEW: Appliquer les filtres côté client (région)**
+        // Apply client-side filters (region)
         const filteredArticles = applyClientSideFilters(state.currentResults);
         const totalBeforeFilter = state.currentResults.length;
         const totalAfterFilter = filteredArticles.length;
         
         renderResults(filteredArticles);
+        // Display temporary chart with current page data
         updateCharts(filteredArticles);
         updatePagination({
             page: json.page,
             page_size: json.page_size,
-            total: totalAfterFilter, // Utiliser le total après filtrage
+            total: totalAfterFilter, // Use filtered total
             page_count: json.page_count,
             returned: json.returned
         });
         
-        // Indiquer si résultats viennent du cache
+        // Indicate if results come from cache
         const cacheInfo = json.source === 'cache' ? ` (cached ${json.cache_age_days} days ago)` : '';
         const regionFilter = document.getElementById('regionFilter')?.value;
         const regionInfo = regionFilter && totalBeforeFilter !== totalAfterFilter 
             ? ` | Region filter: ${getRegionName(regionFilter)} (${totalAfterFilter}/${totalBeforeFilter} articles)` 
             : '';
-        showStatus((json.message || `Found ${json.total ?? state.results.length} articles`) + cacheInfo + regionInfo, (json.total ?? state.results.length) ? 'success' : 'warning');
+        
+        // Indiquer si PubMed a plus d'articles que la limite maxResults
+        const totalOnPubmed = json.total_on_pubmed || json.total;
+        const maxResultsLimit = parseInt(elements.maxResultsSelect?.value, 10) || 20000;
+        const truncatedInfo = totalOnPubmed > maxResultsLimit 
+            ? ` ⚠️ PubMed contains ${totalOnPubmed.toLocaleString()} articles (limited to ${maxResultsLimit.toLocaleString()})` 
+            : '';
+        
+        showStatus((json.message || `Found ${json.total ?? state.results.length} articles`) + cacheInfo + regionInfo + truncatedInfo, (json.total ?? state.results.length) ? 'success' : 'warning');
         elements.resultsSection?.classList.remove('hidden');
+        
+        // If region filter active AND few results, fetch more articles
+        const regionFilterValue = document.getElementById('regionFilter')?.value;
+        if (regionFilterValue && totalAfterFilter < 100 && json.total > totalBeforeFilter) {
+            // Fetch more articles for more filtered results (will mark finished when done)
+            fetchMoreArticlesForRegionFilter(state.lastSearchParams, json.total, filteredArticles);
+        } else if (json.total > filteredArticles.length) {
+            // Otherwise, fetch for background chart (will mark finished when done)
+            fetchAllArticlesForChart(state.lastSearchParams, json.total);
+        } else {
+            // No background fetch needed, mark as finished now
+            updateSearchStatus('finished');
+        }
     } catch (error) {
         console.error(error);
         state.currentResults = []; // Clear on error
@@ -1094,6 +1578,7 @@ async function performSearch({ page } = {}) {
         updatePagination({ page: 1, page_size: state.pagination.pageSize, total: 0, page_count: 1, returned: 0 });
         showStatus('Unable to retrieve search results. Please try again.', 'error');
         elements.resultsSection?.classList.remove('hidden');
+        updateSearchStatus('error');
     } finally {
         setLoading(false);
         checkCache();
@@ -1103,7 +1588,7 @@ async function performSearch({ page } = {}) {
 // **NEW: Batch Search Function**
 async function performBatchSearch(queries) {
     if (queries.length > 10) {
-        showStatus('⚠️ Maximum 10 queries allowed. Using first 10 queries.', 'warning');
+        showStatus('Maximum 10 queries allowed. Using first 10 queries.', 'warning');
         queries = queries.slice(0, 10);
     }
     
@@ -1116,14 +1601,18 @@ async function performBatchSearch(queries) {
     
     try {
         clearStatus();
-        showStatus(`🔄 Searching ${queries.length} queries in parallel...`, 'info');
-        console.log('[Batch Search] Launching', queries.length, 'queries:', queries);
+        showStatus(`Searching ${queries.length} queries in parallel...`, 'info');
         
         // Construire le payload batch
+        const yearFrom = document.getElementById('yearFrom')?.value;
+        const yearTo = document.getElementById('yearTo')?.value;
+        
         const commonParams = {
             study_type: document.getElementById('surgeryType')?.value || '',
             journal_rank: document.getElementById('journalRank')?.value || 'all',
-            time_period: document.getElementById('timePeriod')?.value || '10'
+            time_period: (yearFrom || yearTo) ? '' : '10',
+            year_from: yearFrom ? parseInt(yearFrom, 10) : null,
+            year_to: yearTo ? parseInt(yearTo, 10) : null
         };
         
         const batchQueries = queries.map(kw => ({
@@ -1131,19 +1620,18 @@ async function performBatchSearch(queries) {
             ...commonParams
         }));
         
-        const response = await fetch('/api/batch-search', {
+        const response = await fetch('/api/batch-search/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 queries: batchQueries,
                 max_results_per_query: 200,
-                combine: true,  // Combiner tous les résultats
-                dedup: true     // Dédupliquer par PMID
+                combine: true,  // Combine all results
+                dedup: true     // Deduplicate by PMID
             })
         });
         
         const json = await response.json();
-        console.log('[Batch Search] Response:', json);
         
         if (!response.ok || json.status !== 'success') {
             throw new Error(json.message || 'Batch search failed');
@@ -1154,12 +1642,12 @@ async function performBatchSearch(queries) {
         // Store unfiltered results for client-side filtering
         state.currentResults = articles;
         
-        // **NEW: Appliquer les filtres côté client (région)**
+        // Apply client-side filters (region)
         const filteredArticles = applyClientSideFilters(articles);
         const totalBeforeFilter = articles.length;
         const totalAfterFilter = filteredArticles.length;
         
-        // Afficher les résultats
+        // Display results
         renderResults(filteredArticles);
         updateCharts(filteredArticles);
         updatePagination({
@@ -1175,7 +1663,7 @@ async function performBatchSearch(queries) {
         const regionInfo = regionFilter && totalBeforeFilter !== totalAfterFilter 
             ? ` | Region filter: ${getRegionName(regionFilter)} (${totalAfterFilter}/${totalBeforeFilter})` 
             : '';
-        const successMsg = `✅ Batch search completed: ${totalAfterFilter} articles from ${json.successful_queries}/${json.total_queries} queries${cachedInfo}${regionInfo}`;
+        const successMsg = `Batch search completed: ${totalAfterFilter} articles from ${json.successful_queries}/${json.total_queries} queries${cachedInfo}${regionInfo}`;
         showStatus(successMsg, 'success');
         
         elements.resultsSection?.classList.remove('hidden');
@@ -1196,15 +1684,9 @@ async function performBatchSearch(queries) {
 async function loadInitialData() {
     setLoading(true);
     try {
-        console.log('[loadInitialData] Chargement données initiales...');
-        const response = await fetch('/api/sample');
+        const response = await fetch('/api/sample/');
         if (!response.ok) throw new Error('Sample data unavailable');
         const json = await response.json();
-        console.log('[loadInitialData] Données reçues:', {
-            total: json.data?.length,
-            firstTitle: json.data?.[0]?.title,
-            firstPMID: json.data?.[0]?.pmid
-        });
         renderResults(json.data || []);
         updateCharts(json.data || []);
         const datasetTotal = json.dataset_total ?? (json.data || []).length;
@@ -1226,7 +1708,7 @@ async function loadInitialData() {
 
 async function checkCache() {
     try {
-        const response = await fetch('/api/cache/status');
+        const response = await fetch('/api/cache/status/');
         if (!response.ok) return;
         const json = await response.json();
         if (json.full) {
@@ -1268,7 +1750,7 @@ if (elements.lastPageBtn) {
 if (elements.clearCacheBtn2) {
     elements.clearCacheBtn2.addEventListener('click', async () => {
         try {
-            const response = await fetch('/api/cache/clear', { method: 'POST' });
+            const response = await fetch('/api/cache/clear/', { method: 'POST' });
             if (response.ok) {
                 showStatus('Cache serveur vidé avec succès.', 'info');
             } else {
@@ -1288,12 +1770,44 @@ if (elements.saveArticleBtn) {
 if (elements.clearCacheBtn) {
     elements.clearCacheBtn.addEventListener('click', async () => {
         try {
-            await fetch('/api/cache/clear', { method: 'POST' });
+            await fetch('/api/cache/clear/', { method: 'POST' });
             elements.cacheAlert?.classList.add('hidden');
             showStatus('Cache cleared successfully.', 'info');
         } catch (error) {
             console.error(error);
             showStatus('Unable to clear the cache right now.', 'error');
+        }
+    });
+}
+
+if (elements.clearCacheHomeBtn) {
+    elements.clearCacheHomeBtn.addEventListener('click', async () => {
+        const btn = elements.clearCacheHomeBtn;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Clearing...';
+        try {
+            const response = await fetch('/api/cache/clear/', { method: 'POST' });
+            if (response.ok) {
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i> Cache Cleared';
+                btn.classList.remove('border-red-300', 'text-red-600', 'hover:bg-red-50');
+                btn.classList.add('border-green-300', 'text-green-600');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('border-green-300', 'text-green-600');
+                    btn.classList.add('border-red-300', 'text-red-600', 'hover:bg-red-50');
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                showStatus('Erreur lors du vidage du cache.', 'error');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            console.error(error);
+            showStatus('Impossible de vider le cache.', 'error');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
         }
     });
 }
@@ -1318,13 +1832,19 @@ if (regionFilterElement) {
             
             renderResults(filteredArticles);
             
+            // Update chart with filtered articles
+            if (allArticlesForChart && allArticlesForChart.length > 0) {
+                const filteredForChart = applyClientSideFilters(allArticlesForChart);
+                updateCharts(filteredForChart);
+            } else {
+                updateCharts(filteredArticles);
+            }
+            
             // Update status message
             const regionFilter = regionFilterElement.value;
             const regionName = regionFilterElement.options[regionFilterElement.selectedIndex].text;
             const regionInfo = regionFilter ? ` | Region filter: ${regionName} (${totalAfterFilter}/${totalBeforeFilter} articles)` : '';
-            showStatus(`✅ Results filtered${regionInfo}`, 'success');
-            
-            console.log(`[Region Filter Change] Applied filter "${regionFilter}": ${totalAfterFilter}/${totalBeforeFilter} articles`);
+            showStatus(`Results filtered${regionInfo}`, 'success');
         }
     });
 }
@@ -1371,7 +1891,7 @@ function updateExportProgress(current, total, message = '') {
     }
     
     if (elements.exportProgressDetails) {
-        elements.exportProgressDetails.textContent = `${current} / ${total} articles récupérés`;
+        elements.exportProgressDetails.textContent = `${current} / ${total} articles fetched`;
     }
 }
 
@@ -1383,10 +1903,10 @@ function resetExportProgress() {
         elements.exportProgressBarFill.style.width = '0%';
     }
     if (elements.exportProgressText) {
-        elements.exportProgressText.textContent = 'Récupération des articles...';
+        elements.exportProgressText.textContent = 'Fetching articles...';
     }
     if (elements.exportProgressDetails) {
-        elements.exportProgressDetails.textContent = 'Préparation...';
+        elements.exportProgressDetails.textContent = 'Preparing...';
     }
 }
 
@@ -1398,66 +1918,53 @@ if (elements.exportBtn) {
         }
 
         try {
-            console.log('[Export] Paramètres de recherche:', state.lastSearchParams);
-            
             // Afficher la barre de progression
             showExportProgress();
-            updateExportProgress(0, 100, 'Initialisation de l\'export...');
+            updateExportProgress(0, 100, 'Initializing export...');
             
-            // Étape 1: Récupérer TOUS les résultats de la recherche (0-60%)
-            updateExportProgress(10, 100, 'Récupération des articles depuis PubMed...');
+            // Step 1: Fetch ALL search results (0-60%)
+            updateExportProgress(10, 100, 'Fetching articles from PubMed...');
             
-            const allResultsResponse = await fetch('/api/export-all', {
+            const allResultsResponse = await fetch('/api/export-all/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state.lastSearchParams || {})
             });
             
-            console.log('[Export] Réponse API:', allResultsResponse.status);
-            
             if (!allResultsResponse.ok) {
                 const errorText = await allResultsResponse.text();
-                console.error('[Export] Erreur API:', errorText);
                 hideExportProgress();
                 throw new Error('Failed to get all results: ' + errorText);
             }
             
-            updateExportProgress(60, 100, 'Articles récupérés avec succès...');
+            updateExportProgress(60, 100, 'Articles fetched successfully...');
             
             const allResultsData = await allResultsResponse.json();
-            console.log('[Export] Données reçues:', {
-                status: allResultsData.status,
-                total: allResultsData.total,
-                returned: allResultsData.returned,
-                articlesCount: allResultsData.data?.length
-            });
             
-            // Filtrer les articles cachés
+            // Filter hidden articles
             const allArticles = getVisibleArticles(allResultsData.data || []);
-            console.log('[Export] Articles après filtrage:', {
-                total: allResultsData.data?.length || 0,
-                visibles: allArticles.length,
-                cachés: state.hidden.size
-            });
             
-            if (allArticles.length === 0) {
+            // Apply client-side filters (region, year)
+            const filteredArticles = applyClientSideFilters(allArticles);
+            
+            if (filteredArticles.length === 0) {
                 hideExportProgress();
-                showStatus('⚠️ Aucun article visible à exporter (tous les articles sont cachés)', 'warning');
+                showStatus('No articles match the selected filters (region/year)', 'warning');
                 return;
             }
             
-            // Étape 2: Ajouter la classification des revues (60-75%)
-            updateExportProgress(70, 100, `Classification de ${allArticles.length} revues visibles...`);
+            // Step 2: Add journal classification (60-75%)
+            updateExportProgress(70, 100, `Classifying ${filteredArticles.length} journals...`);
             
-            const articlesWithRanking = allArticles.map(article => ({
+            const articlesWithRanking = filteredArticles.map(article => ({
                 ...article,
                 quality: getJournalRanking(article.journal || '')
             }));
             
-            // Étape 3: Générer le fichier Excel (75-95%)
-            updateExportProgress(80, 100, 'Génération du fichier Excel...');
+            // Step 3: Generate Excel file (75-95%)
+            updateExportProgress(80, 100, 'Generating Excel file...');
             
-            const exportResponse = await fetch('/export/excel', {
+            const exportResponse = await fetch('/export/excel/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ articles: articlesWithRanking })
@@ -1468,7 +1975,7 @@ if (elements.exportBtn) {
                 throw new Error('Export failed');
             }
             
-            updateExportProgress(95, 100, 'Téléchargement du fichier...');
+            updateExportProgress(95, 100, 'Downloading file...');
             
             const blob = await exportResponse.blob();
             const url = URL.createObjectURL(blob);
@@ -1485,8 +1992,8 @@ if (elements.exportBtn) {
             
             const hiddenCount = state.hidden.size;
             const statusMsg = hiddenCount > 0 
-                ? `Export successful: ${allArticles.length} visible article(s) exported (${hiddenCount} hidden excluded)` 
-                : `Export successful: ${allArticles.length} article(s) exported to Excel`;
+                ? `Export successful: ${filteredArticles.length} article(s) exported (${hiddenCount} hidden excluded)` 
+                : `Export successful: ${filteredArticles.length} article(s) exported to Excel (with applied filters)`;
             
             setTimeout(() => hideExportProgress(), 2000);
             showStatus(statusMsg, 'success');
@@ -1508,12 +2015,126 @@ if (elements.closeModalBtn && elements.modal) {
 }
 
 window.addEventListener('load', () => {
+    // Article Type Modal Logic
+    const btn = document.getElementById('studyTypeButton');
+    const modal = document.getElementById('articleTypeModal');
+    const checkboxes = document.querySelectorAll('.study-type-checkbox');
+    const hiddenSelect = document.getElementById('studyType');
+    const label = document.getElementById('studyTypeButtonText');
+    const chevron = document.getElementById('studyTypeChevron');
+    const closeBtn = document.getElementById('closeArticleTypeModal');
+    const cancelBtn = document.getElementById('cancelArticleType');
+    const applyBtn = document.getElementById('applyArticleType');
+
+    // Store temporary selections
+    let tempSelections = [];
+
+    function openModal() {
+        // Save current selections
+        tempSelections = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        if (chevron) chevron.classList.add('rotate-180');
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (chevron) chevron.classList.remove('rotate-180');
+    }
+
+    function restoreSelections() {
+        // Restore previous selections if cancelled
+        checkboxes.forEach(cb => {
+            cb.checked = tempSelections.includes(cb.value);
+        });
+    }
+
+    function updateHiddenSelect() {
+        // Reset options
+        Array.from(hiddenSelect.options).forEach(opt => opt.selected = false);
+        
+        // Select options based on checkboxes
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                const option = Array.from(hiddenSelect.options).find(opt => opt.value === cb.value);
+                if (option) option.selected = true;
+            }
+        });
+    }
+
+    function updateLabel() {
+        const checked = Array.from(checkboxes).filter(cb => cb.checked);
+        if (checked.length === 0) {
+            label.textContent = "Any Type";
+            label.classList.remove('text-blue-600', 'font-medium');
+            label.classList.add('text-gray-700');
+        } else if (checked.length === 1) {
+            // Find the label text next to the checkbox
+            label.textContent = checked[0].nextElementSibling.textContent;
+            label.classList.add('text-blue-600', 'font-medium');
+            label.classList.remove('text-gray-700');
+        } else {
+            label.textContent = `${checked.length} types selected`;
+            label.classList.add('text-blue-600', 'font-medium');
+            label.classList.remove('text-gray-700');
+        }
+    }
+
+    if (btn && modal) {
+        // Ouvrir le modal au clic sur le bouton
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openModal();
+        });
+
+        // Fermer avec le bouton X
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                restoreSelections();
+                closeModal();
+            });
+        }
+
+        // Annuler
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                restoreSelections();
+                closeModal();
+            });
+        }
+
+        // Appliquer
+        if (applyBtn) {
+            applyBtn.addEventListener('click', () => {
+                updateHiddenSelect();
+                updateLabel();
+                closeModal();
+            });
+        }
+
+        // Fermer en cliquant sur le fond
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                restoreSelections();
+                closeModal();
+            }
+        });
+
+        // Fermer avec Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                restoreSelections();
+                closeModal();
+            }
+        });
+    }
+
     updateSavedCount();
     updateSavedIndicators();
     checkCache();
-    // Ne pas charger les données mock au démarrage
-    // loadInitialData();
-    console.log('✓ Application prête. Tapez un mot-clé et cliquez "Search PubMed" pour obtenir de vraies données.');
+
     // Refresh page when clicking the app title in sidebar
     const appTitleBtn = document.getElementById('appTitle');
     if (appTitleBtn) {

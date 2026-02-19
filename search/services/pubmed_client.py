@@ -9,17 +9,20 @@ License: MIT License (see LICENSE file)
 
 import os
 import re
+import json
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 import logging
 
 import requests
 from requests import Response
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from xml.etree import ElementTree
 from .participant_extractor import ParticipantExtractor
 from .outcome_extractor import OutcomeExtractor
-from .region_detector import get_region_from_affiliation
-from .journal_config import build_journal_filter
+from .region_detector import get_region_from_affiliation, get_country_code
+from .journal_config import build_journal_filter, build_nursing_journal_filter
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,22 @@ logger = logging.getLogger(__name__)
 BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 USER_AGENT = "MedSearchApp/1.0 (contact: support@example.com)"
 DEFAULT_TIMEOUT = 12
+MAX_PUBMED_LIMIT = 100000  # Maximum articles accessible via PubMed E-utilities
+
+# Persistent HTTP session with retry strategy
+_session = requests.Session()
+_retry = Retry(
+    total=3,
+    backoff_factor=0.5,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET", "POST"],
+)
+_session.mount("https://", HTTPAdapter(max_retries=_retry))
+_session.mount("http://", HTTPAdapter(max_retries=_retry))
+
+# NCBI E-utilities API Configuration (chargé depuis .env)
+NCBI_API_KEY = os.getenv('NCBI_API_KEY')
+NCBI_EMAIL = os.getenv('NCBI_EMAIL')
 
 
 class PubMedError(Exception):
@@ -34,25 +53,104 @@ class PubMedError(Exception):
 
 
 PUBLICATION_TYPE_MAP = {
-    "randomized_controlled": '"randomized controlled trial"[Publication Type]',
-    "meta": '"meta-analysis"[Publication Type]',
-    "cohort": '"cohort studies"[MeSH Terms]',
-    "case_control": '"case-control studies"[MeSH Terms]',
-    "systematic_review": '"systematic review"[Publication Type]',
+    # Clinical Trials
+    "adaptive_clinical_trial": '"Adaptive Clinical Trial"[Publication Type]',
+    "clinical_trial": '"Clinical Trial"[Publication Type]',
+    "clinical_trial_protocol": '"Clinical Trial Protocol"[Publication Type]',
+    "clinical_trial_phase_i": '"Clinical Trial, Phase I"[Publication Type]',
+    "clinical_trial_phase_ii": '"Clinical Trial, Phase II"[Publication Type]',
+    "clinical_trial_phase_iii": '"Clinical Trial, Phase III"[Publication Type]',
+    "clinical_trial_phase_iv": '"Clinical Trial, Phase IV"[Publication Type]',
+    "controlled_clinical_trial": '"Controlled Clinical Trial"[Publication Type]',
+    "equivalence_trial": '"Equivalence Trial"[Publication Type]',
+    "pragmatic_clinical_trial": '"Pragmatic Clinical Trial"[Publication Type]',
+    "randomized_controlled_trial": '"Randomized Controlled Trial"[Publication Type]',
+    
+    # Studies
+    "randomized_clinical_trial": '"Randomized Controlled Trial"[Publication Type]',
+    "case_reports": '"Case Reports"[Publication Type]',
+    "clinical_study": '"Clinical Study"[Publication Type]',
+    "comparative_study": '"Comparative Study"[Publication Type]',
+    "evaluation_study": '"Evaluation Study"[Publication Type]',
+    "multicenter_study": '"Multicenter Study"[Publication Type]',
+    "observational_study": '"Observational Study"[Publication Type]',
+    "twin_study": '"Twin Study"[Publication Type]',
+    "validation_study": '"Validation Study"[Publication Type]',
+    
+    # Reviews & Meta-analyses
+    "meta_analysis": '"Meta-Analysis"[Publication Type]',
+    "network_meta_analysis": '"Network Meta-Analysis"[Publication Type]',
+    "review": '"Review"[Publication Type]',
+    "systematic_review": '"Systematic Review"[Publication Type]',
+    
+    # Guidelines
+    "guideline": '"Guideline"[Publication Type]',
+    "practice_guideline": '"Practice Guideline"[Publication Type]',
+    
+    # Other
+    "classical_article": '"Classical Article"[Publication Type]',
+    "clinical_conference": '"Clinical Conference"[Publication Type]',
+    
+    # Legacy mappings (for backward compatibility)
+    "randomized_controlled": '"Randomized Controlled Trial"[Publication Type]',
+    "meta": '"Meta-Analysis"[Publication Type]',
+    "cohort": '"Cohort Studies"[MeSH Terms]',
+    "case_control": '"Case-Control Studies"[MeSH Terms]',
+}
+
+ALLOWED_PUBLICATION_TYPES = {
+    "case_reports",
+    "classical_article",
+    "clinical_study",
+    "comparative_study",
+    "controlled_clinical_trial",
+    "randomized_controlled_trial",
+    "randomized_clinical_trial",
+    "meta_analysis",
+    "network_meta_analysis",
+    "observational_study",
+    "multicenter_study",
+    "review",
+    "systematic_review",
+    "validation_study",
 }
 
 
 def _request(endpoint: str, params: Dict[str, str]) -> Response:
     headers = {"User-Agent": USER_AGENT}
-    api_key = os.getenv("PUBMED_API_KEY")
-    if api_key:
-        params["api_key"] = api_key
-    response = requests.get(
-        f"{BASE_URL}/{endpoint}",
-        params=params,
-        headers=headers,
-        timeout=DEFAULT_TIMEOUT
-    )
+    
+    # Utiliser la clé API et l'email configurés
+    if NCBI_API_KEY:
+        params["api_key"] = NCBI_API_KEY
+    else:
+        logger.warning("NCBI_API_KEY not set - requests may be rate-limited")
+    
+    if NCBI_EMAIL:
+        params["email"] = NCBI_EMAIL
+    
+    # Calculer la taille approximative de l'URL
+    query_string = "&".join(f"{k}={v}" for k, v in params.items())
+    url = f"{BASE_URL}/{endpoint}"
+    
+    logger.info(f"PubMed request: {endpoint} - Query: {params.get('term', 'N/A')[:100]}")
+    
+    # Si l'URL est trop longue (> 2000 caractères), utiliser POST
+    if len(url) + len(query_string) > 2000:
+        response = _session.post(
+            url,
+            data=params,
+            headers=headers,
+            timeout=DEFAULT_TIMEOUT
+        )
+    else:
+        response = _session.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=DEFAULT_TIMEOUT
+        )
+    
+    logger.info(f"PubMed response: {response.status_code} - Content-Type: {response.headers.get('Content-Type', 'unknown')}")
     response.raise_for_status()
     return response
 
@@ -60,20 +158,44 @@ def _request(endpoint: str, params: Dict[str, str]) -> Response:
 def _build_query(term: str, study_type: str = "", journal_filter: str = "") -> str:
     query_parts = []
     
-    # Si le terme contient déjà des opérateurs booléens (OR, AND), on le recherche dans titre OU abstract
+    # If term contains boolean operators (OR, AND), search in title OR abstract
     if term and ("OR" in term or "AND" in term):
-        # Recherche dans titre OU abstract pour les mots-clés chirurgicaux
+        # Search in title OR abstract for surgical keywords
         query_parts.append(f"({term}[Title/Abstract])")
     elif term:
-        # Recherche simple dans titre OU abstract
+        # Simple search in title OR abstract
         query_parts.append(f"{term}[Title/Abstract]")
+    # Note: if term is empty and journal_filter is set, we'll search ALL articles from those journals
     
-    mapped = PUBLICATION_TYPE_MAP.get(study_type)
-    if mapped:
-        query_parts.append(mapped)
+    # Handle multiple study types (list or comma-separated string)
+    if study_type:
+        types: List[str] = []
+        if isinstance(study_type, list):
+            types = study_type
+        elif isinstance(study_type, str):
+            types = [t.strip() for t in study_type.split(',') if t.strip()]
+        
+        mapped_types: List[str] = []
+        for raw_type in types:
+            normalized = raw_type.strip().lower()
+            if not normalized or normalized not in ALLOWED_PUBLICATION_TYPES:
+                continue
+            mapped = PUBLICATION_TYPE_MAP.get(normalized)
+            if mapped:
+                mapped_types.append(mapped)
+        
+        if mapped_types:
+            if len(mapped_types) > 1:
+                # Combine with OR if multiple types
+                query_parts.append(f"({' OR '.join(mapped_types)})")
+            else:
+                query_parts.append(mapped_types[0])
     
-    # Ajouter le filtre de journal ciblé
-    journal_query = build_journal_filter(journal_filter)
+    # Add targeted journal filter
+    if journal_filter == 'nurse':
+        journal_query = build_nursing_journal_filter()
+    else:
+        journal_query = build_journal_filter(journal_filter)
     if journal_query:
         query_parts.append(journal_query)
     
@@ -118,6 +240,10 @@ def _normalise_authors(author_list: List[Dict[str, str]]) -> str:
 
 
 def _parse_article_xml(xml_text: str) -> List[Dict]:
+    """
+    Parse PubMed XML response into article dictionaries.
+    Uses last author affiliation for region detection.
+    """
     root = ElementTree.fromstring(xml_text)
     articles: List[Dict] = []
 
@@ -156,9 +282,11 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
         ]
 
         author_list: List[Dict[str, str]] = []
+        first_author_affiliation = ""
         last_author_affiliation = ""
         
-        for author in article_node.findall("AuthorList/Author"):
+        authors_nodes = article_node.findall("AuthorList/Author")
+        for idx, author in enumerate(authors_nodes):
             author_data = {
                 "LastName": author.findtext("LastName") or "",
                 "ForeName": author.findtext("ForeName") or "",
@@ -166,15 +294,27 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
             }
             author_list.append(author_data)
             
-            # Extraire l'affiliation du dernier auteur
+            # Extraire l'affiliation de l'auteur
             affiliation_node = author.find("AffiliationInfo/Affiliation")
             if affiliation_node is not None and affiliation_node.text:
+                # Premier auteur (index 0)
+                if idx == 0:
+                    first_author_affiliation = affiliation_node.text
+                # Dernier auteur (toujours mettre à jour pour avoir le dernier)
                 last_author_affiliation = affiliation_node.text
         
         authors = _normalise_authors(author_list)
         
-        # Déterminer la région depuis l'affiliation du dernier auteur
-        region = get_region_from_affiliation(last_author_affiliation) if last_author_affiliation else ""
+        # Determine region and country from affiliations
+        # Extract both for reference
+        first_author_region = get_region_from_affiliation(first_author_affiliation) if first_author_affiliation else ""
+        first_author_country = get_country_code(first_author_affiliation) if first_author_affiliation else ""
+        last_author_region = get_region_from_affiliation(last_author_affiliation) if last_author_affiliation else ""
+        last_author_country = get_country_code(last_author_affiliation) if last_author_affiliation else ""
+
+        # Use last author affiliation for region detection
+        country = last_author_country
+        region = last_author_region
 
         doi = None
         for id_node in node.findall("PubmedData/ArticleIdList/ArticleId"):
@@ -184,6 +324,13 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
 
         mesh_terms = (
             [mt.text for mt in medline.findall("MeshHeadingList/MeshHeading/DescriptorName") if mt.text]
+            if medline is not None
+            else []
+        )
+        
+        # Extraire les vrais Keywords (KeywordList) depuis le XML PubMed
+        keywords = (
+            [kw.text for kw in medline.findall("KeywordList/Keyword") if kw.text]
             if medline is not None
             else []
         )
@@ -211,8 +358,15 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "sample_size": participant_info['sample_size'],
                 "sample_size_confidence": participant_info['confidence'],
                 "sample_size_source": participant_info['matched_text'],
-                "region": region,  # Région basée sur l'affiliation du dernier auteur
-                "keywords": mesh_terms,
+                "region": region,  # Region based on last author affiliation
+                "first_author_region": first_author_region,  # First author region
+                "country": country,  # Primary country (last author)
+                "first_author_country": first_author_country,  # First author country
+                "last_author_country": last_author_country,  # Last author country
+                "affiliation": last_author_affiliation,  # Primary affiliation (last author)
+                "first_author_affiliation": first_author_affiliation,  # First author affiliation
+                "last_author_affiliation": last_author_affiliation,  # Last author affiliation
+                "keywords": keywords,  # Real Keywords from KeywordList
                 "mesh_terms": mesh_terms,
                 "citations": None,
                 "impact_factor": None,
@@ -222,7 +376,14 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "primary_outcome_confidence": outcomes.get('primary_outcome_confidence'),
                 "adverse_events": outcomes.get('adverse_events'),
                 "adverse_events_confidence": outcomes.get('adverse_events_confidence'),
-                "has_outcomes": bool(outcomes.get('primary_outcome') or outcomes.get('adverse_events')),
+                "efficacy": outcomes.get('efficacy'),
+                "efficacy_confidence": outcomes.get('efficacy_confidence'),
+                "results": outcomes.get('results'),
+                "results_confidence": outcomes.get('results_confidence'),
+                "safety": outcomes.get('safety'),
+                "safety_confidence": outcomes.get('safety_confidence'),
+                "has_outcomes": bool(outcomes.get('primary_outcome') or outcomes.get('adverse_events') 
+                                    or outcomes.get('efficacy') or outcomes.get('results') or outcomes.get('safety')),
                 "outcome_summary": outcome_summary,
             }
         )
@@ -238,11 +399,22 @@ def search_pubmed(
     study_type: str = "",
     time_period: str = "",
     journal_filter: str = "",
+    year_from: Optional[int] = None,
+    year_to: Optional[int] = None,
 ) -> Tuple[int, List[Dict]]:
-    # Si aucun terme n'est fourni, rechercher tous les articles médicaux récents
+    # If no term is provided and no journal filter is set, search all recent medical articles
     if not term or not term.strip():
         term = "medicine[MeSH Terms]"
 
+    # 🚨 LIMITE PUBMED : Maximum articles accessibles
+    if start >= MAX_PUBMED_LIMIT:
+        logger.warning(f"Start index {start} exceeds PubMed limit ({MAX_PUBMED_LIMIT}). Resetting to 0.")
+        start = 0
+    
+    if start + size > MAX_PUBMED_LIMIT:
+        size = MAX_PUBMED_LIMIT - start
+        logger.warning(f"Adjusted size to {size} to respect PubMed limit.")
+    
     size = max(1, min(size, 200))
     esearch_params = {
         "db": "pubmed",
@@ -253,7 +425,16 @@ def search_pubmed(
         "sort": "relevance",
     }
 
-    if time_period and time_period != "all":
+    # Priorité aux années personnalisées (year_from/year_to) sur time_period
+    # Intervalle fermé [year_from, year_to] - les deux années sont incluses
+    if year_from or year_to:
+        today = datetime.now()
+        start_year = int(year_from) if year_from else 1900
+        end_year = int(year_to) if year_to else today.year
+        esearch_params["mindate"] = f"{start_year}/01/01"
+        esearch_params["maxdate"] = f"{end_year}/12/31"
+        esearch_params["datetype"] = "pdat"  # Publication date
+    elif time_period and time_period != "all":
         try:
             years = int(time_period)
         except (TypeError, ValueError):
@@ -265,13 +446,25 @@ def search_pubmed(
             esearch_params["maxdate"] = f"{today.year}/{today.month:02d}/{today.day:02d}"
 
     search_response = _request("esearch.fcgi", esearch_params)
-    payload = search_response.json()
+    try:
+        payload = search_response.json()
+    except json.JSONDecodeError as exc:
+        # PubMed sometimes returns HTML/XML error pages; surface a clearer message with a small snippet.
+        cleaned_text = re.sub(r"[\x00-\x1f\x7f]", " ", search_response.text or "")
+        snippet = cleaned_text[:500].strip()
+        logger.error(f"PubMed non-JSON response. Status: {search_response.status_code}, Content-Type: {search_response.headers.get('Content-Type')}, Response: {snippet}")
+        raise PubMedError(f"PubMed API error - received non-JSON response. This may be due to rate limiting or API issues. Response snippet: {snippet[:200]}") from exc
     try:
         result = payload["esearchresult"]
         total_count = int(result.get("count", 0))
         ids = result.get("idlist", [])
     except (KeyError, ValueError) as exc:
         raise PubMedError(f"Unexpected response structure: {payload}") from exc
+
+    # 🚨 LIMITE PUBMED : Plafonner le total_count
+    if total_count > MAX_PUBMED_LIMIT:
+        logger.warning(f"PubMed found {total_count} articles but limit is {MAX_PUBMED_LIMIT}. Capping total.")
+        total_count = MAX_PUBMED_LIMIT
 
     if not ids:
         return 0, []
@@ -283,4 +476,5 @@ def search_pubmed(
     }
     fetch_response = _request("efetch.fcgi", efetch_params)
     articles = _parse_article_xml(fetch_response.text)
+    
     return total_count, articles

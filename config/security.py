@@ -1,6 +1,9 @@
 """
 Configuration sécurité pour Medical Search App - Site Public Gratuit.
-Sécurité sans authentification, optimisée pour déploiement production.
+
+NOTE: Ce fichier n'est PAS importé par settings.py.
+Les paramètres de sécurité sont définis directement dans config/settings.py
+et config/middleware.py. Ce fichier est conservé comme référence uniquement.
 """
 
 from datetime import timedelta
@@ -177,9 +180,3 @@ LOGGING = {
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-print(f"[Security] Mode DEBUG: {os.getenv('DEBUG', 'false')}")
-print(f"[Security] HTTPS Redirect: {SECURE_SSL_REDIRECT}")
-print(f"[Security] Rate Limit: {RATELIMIT_RATE}")
-print(f"[Security] Cache Timeout: {CACHE_TIMEOUT}s")
-print(f"[Security] Logging Level: {LOG_LEVEL}")

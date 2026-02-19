@@ -135,23 +135,24 @@ class RateLimitMiddleware:
     @staticmethod
     def get_client_ip(request: HttpRequest) -> str:
         """
-        Get client IP address from request
-        Handles proxy headers (X-Forwarded-For, X-Real-IP)
+        Get client IP address from request.
+        Only trusts proxy headers if the request comes from a trusted proxy.
         """
-        # Check for proxy headers (hospital networks, reverse proxies)
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            # X-Forwarded-For can contain multiple IPs, take the first one
-            ip = x_forwarded_for.split(',')[0].strip()
-            return ip
-        
-        # Check X-Real-IP header
-        x_real_ip = request.META.get('HTTP_X_REAL_IP')
-        if x_real_ip:
-            return x_real_ip
-        
-        # Fallback to REMOTE_ADDR
-        return request.META.get('REMOTE_ADDR', '0.0.0.0')
+        remote_addr = request.META.get('REMOTE_ADDR', '0.0.0.0')
+        trusted_proxies = getattr(settings, 'TRUSTED_PROXIES', ['127.0.0.1'])
+
+        # Only trust proxy headers if request comes from a known proxy
+        if remote_addr in trusted_proxies:
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0].strip()
+                return ip
+
+            x_real_ip = request.META.get('HTTP_X_REAL_IP')
+            if x_real_ip:
+                return x_real_ip
+
+        return remote_addr
 
 
 class LoggingMiddleware:
@@ -164,9 +165,12 @@ class LoggingMiddleware:
         self.get_response = get_response
         self.api_logger = logging.getLogger('api')
         
-        # Configure API logger
+        # Configure API logger using settings BASE_DIR
         if not self.api_logger.handlers:
-            handler = logging.FileHandler('logs/api.log')
+            from django.conf import settings as _settings
+            log_path = _settings.BASE_DIR / 'logs' / 'api.log'
+            log_path.parent.mkdir(exist_ok=True)
+            handler = logging.FileHandler(str(log_path))
             formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )

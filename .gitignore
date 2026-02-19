@@ -140,3 +140,7 @@ CORRECTIONS_*.md
 IMPROVEMENTS_*.md
 MEDICAL_SEARCH_*.md
 Plan\ d\'*
+
+# Tailwind CSS
+tailwindcss.exe
+node_modules/

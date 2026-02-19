@@ -22,9 +22,25 @@ load_dotenv(BASE_DIR / '.env')
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(exist_ok=True)
 
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-insecure-key')
 DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
+
+# SECRET_KEY: require a real key in production
+_default_key = 'dev-insecure-key'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', _default_key)
+if not DEBUG and SECRET_KEY == _default_key:
+    raise RuntimeError(
+        'DJANGO_SECRET_KEY must be set in production. '
+        'Generate one with: python -c "from django.core.secret import get_random_secret_key; print(get_random_secret_key())"'
+    )
+
+# ALLOWED_HOSTS: refuse wildcard in production
 ALLOWED_HOSTS = [h for h in os.getenv('ALLOWED_HOSTS', '*').split(',') if h]
+if not DEBUG and ALLOWED_HOSTS == ['*']:
+    warnings.warn(
+        'ALLOWED_HOSTS is set to ["*"] in production. '
+        'Set a specific hostname via the ALLOWED_HOSTS environment variable.',
+        RuntimeWarning,
+    )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -104,13 +120,6 @@ if HAS_WHITENOISE:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-medsearch'
-    }
-}
 
 CACHE_THRESHOLD = int(os.getenv('CACHE_THRESHOLD', '50'))
 
@@ -213,12 +222,12 @@ LOGGING = {
     },
 }
 
-# Cache configuration for production
+# Cache configuration
 if not DEBUG:
-    # Use Redis in production for distributed caching
+    # Use django-redis in production for distributed caching
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'BACKEND': 'django_redis.cache.RedisCache',
             'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -239,9 +248,6 @@ else:
             'LOCATION': 'unique-medsearch'
         }
     }
-
-# WhiteNoise configuration for static files (production)
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Proxy configuration (for hospital networks behind proxies)
 TRUSTED_PROXIES = [h for h in os.getenv('TRUSTED_PROXIES', '127.0.0.1').split(',') if h]

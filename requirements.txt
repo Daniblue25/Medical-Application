@@ -10,9 +10,6 @@ dj-database-url==2.1.0
 django-redis==5.4.0
 redis==5.0.1
 
-# CORS support
-django-cors-headers==4.3.0
-
 # Production Server & Static Files
 gunicorn==21.2.0
 whitenoise==6.6.0
@@ -27,16 +24,7 @@ reportlab==4.2.2
 # API & HTTP Requests
 requests==2.32.3
 
-# NLP/Text Processing
-nltk==3.8.1
-
-# Build Tools
-pyinstaller==6.3.0
-
-# Optional: Error Tracking
-sentry-sdk==1.38.0
-
-# Packaging (standalone desktop builds)
+# Build Tools & Packaging (standalone desktop builds)
 pyinstaller==6.3.0
 
 # Development Tools (optional)

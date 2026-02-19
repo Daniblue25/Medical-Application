@@ -1,10 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.views.decorators.csrf import csrf_exempt
 from config.caching import clear_search_cache, cache_is_full
 from django.core.cache import cache
 
-@csrf_exempt
 @api_view(['POST'])
 def clear_cache(request):
     removed = clear_search_cache()

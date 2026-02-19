@@ -9,9 +9,6 @@ License: MIT License (see LICENSE file)
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.core.cache import cache
-from django.views.decorators.csrf import csrf_exempt
-from config.caching import register_cache_key
 from ..services.pubmed_client import search_pubmed, PubMedError
 from ..services.cache_manager import CacheManager
 import math
@@ -21,21 +18,20 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-@csrf_exempt
 @api_view(['POST'])
 def search_api(request):
     data = request.data or {}
-    max_input = data.get('max_results') or data.get('maxResults') or 20000
+    max_input = data.get('max_results') or data.get('maxResults') or 100000
     page_input = data.get('page') or data.get('pageNumber') or 1
     page_size_input = data.get('page_size') or data.get('pageSize') or max_input
     try:
-        page_size = max(1, min(int(page_size_input), 50000))
+        page_size = max(1, min(int(page_size_input), 200000))
     except (TypeError, ValueError):
         page_size = 200
     try:
-        max_results = max(1, min(int(max_input), 50000))
+        max_results = max(1, min(int(max_input), 100000))
     except (TypeError, ValueError):
-        max_results = 20000
+        max_results = 100000
     try:
         page = max(1, int(page_input))
     except (TypeError, ValueError):
@@ -44,105 +40,105 @@ def search_api(request):
     # Gérer le filtre de rang de revue
     journal_rank = data.get('journalRank', 'all')
     if journal_rank == 'a':
-        # Utiliser les 13 revues de rang A
         journal_filter = ''  # Chaîne vide = filtre sur les 13 revues cibles
+    elif journal_rank == 'nurse':
+        journal_filter = 'nurse'
     else:
-        # 'all' = rechercher dans toutes les revues PubMed
-        journal_filter = 'no_filter'  # Valeur spéciale pour désactiver le filtre
+        journal_filter = 'no_filter'  # 'all' = toutes les revues PubMed
     
-    filters = dict(
-        keywords=data.get('keywords', data.get('query', '')),
-        study_type=data.get('studyType', ''),
-        journal_filter=journal_filter,
-        region=data.get('regionFilter', ''),
-        time_period=data.get('timePeriod', '10'),
-        sample_size=data.get('sampleSize', '')
-    )
+    # Gérer le filtre de période - support des années personnalisées
+    year_from_input = data.get('yearFrom')
+    year_to_input = data.get('yearTo')
+    
+    filters = {
+        'keywords': data.get('keywords', data.get('query', '')),
+        'study_type': data.get('studyType', ''),
+        'journal_filter': journal_filter,
+        'region': data.get('regionFilter', ''),
+        'time_period': data.get('timePeriod', '10'),
+        'year_from': year_from_input,
+        'year_to': year_to_input,
+        'sample_size': data.get('sampleSize', '')
+    }
 
     keyword = (filters['keywords'] or '').strip()
-    
-    # **NOUVEAU: Vérifier le cache de base de données**
-    # Extraire year_from et year_to depuis time_period
-    time_period = filters.get('time_period', '10')
-    year_to = None
-    year_from = None
-    if time_period and time_period.isdigit():
-        from datetime import datetime
-        year_to = datetime.now().year
-        year_from = year_to - int(time_period)
-    
-    cached_result = CacheManager.get_cached_results(
-        keywords=keyword,
-        surgery_type=filters['study_type'],
-        journal_rank=journal_rank,
-        year_from=year_from,
-        year_to=year_to
-    )
-    
-    if cached_result and page == 1:
-        # Cache trouvé et frais, retourner directement
-        articles = cached_result['articles']
-        total_available = len(articles)
-        effective_page_size = min(page_size, max_results, 200)
-        page_count = max(1, math.ceil(total_available / effective_page_size))
-        
-        # Pagination des résultats en cache
-        start_idx = (page - 1) * effective_page_size
-        end_idx = start_idx + effective_page_size
-        page_articles = articles[start_idx:end_idx]
-        
-        return Response({
-            "status": "success",
-            "data": page_articles,
-            "total": total_available,
-            "returned": len(page_articles),
-            "page": page,
-            "page_size": effective_page_size,
-            "page_count": page_count,
-            "source": "cache",
-            "cache_age_days": cached_result['cache_age_days'],
-            "message": f"Cached results ({cached_result['cache_age_days']} days old) - {total_available} articles"
-        })
-    
-    # Pas de cache ou expiré, requête PubMed normale
-    cache_key = f"search:{hash(frozenset({**data, 'page': page, 'page_size': page_size}.items()))}"
-    cached = cache.get(cache_key)
-    if cached:
-        return Response({"status": "success", "cached": True, **cached})
-    
+
     try:
-        # Toujours utiliser PubMed - si pas de keyword, recherche générale
+        # --- Smart Cache: check if results are already cached ---
+        cached = CacheManager.get_cached_results(
+            keywords=keyword,
+            surgery_type=filters['study_type'] if isinstance(filters['study_type'], str) else ','.join(filters['study_type']),
+            journal_rank=data.get('journalRank', 'all'),
+            year_from=filters['year_from'],
+            year_to=filters['year_to'],
+        )
+        
+        if cached:
+            # Cache frais: retourner les articles du cache
+            all_cached = cached['articles']
+            total_available = len(all_cached)
+            effective_page_size = min(page_size, 200)
+            start_idx = (page - 1) * effective_page_size
+            end_idx = start_idx + effective_page_size
+            page_articles = all_cached[start_idx:end_idx]
+            page_count = max(1, math.ceil(total_available / effective_page_size))
+            
+            return Response({
+                "status": "success",
+                "data": page_articles,
+                "total": total_available,
+                "total_on_pubmed": total_available,
+                "returned": len(page_articles),
+                "page": page,
+                "page_size": effective_page_size,
+                "page_count": page_count,
+                "source": "cache",
+                "cache_age_days": cached.get('cache_age_days', 0),
+                "message": f"Returned {len(page_articles)} cached articles (page {page}/{page_count}, cache age: {cached.get('cache_age_days', 0)}d)"
+            })
+
+        # --- Cache miss or expired: query PubMed ---
         start_index = (page - 1) * min(page_size, 200)
+        # Convertir study_type en string si c'est une liste
+        study_type_value = filters['study_type']
+        if isinstance(study_type_value, list):
+            study_type_value = ','.join(study_type_value) if study_type_value else ''
+        
         total_count, articles = search_pubmed(
-            term=keyword,  # Vide = recherche par défaut "medicine[MeSH Terms]"
+            term=keyword,
             start=start_index,
             size=min(page_size, 200),
-            study_type=filters['study_type'],
-            time_period=filters['time_period'],
-            journal_filter=filters['journal_filter']
+            study_type=study_type_value or '',
+            time_period=filters['time_period'] or '',
+            journal_filter=filters['journal_filter'] or '',
+            year_from=filters['year_from'],
+            year_to=filters['year_to']
         )
+        
+        # Sauvegarder/fusionner dans le cache (incrémental)
+        if articles and keyword:
+            try:
+                new_count = CacheManager.merge_into_cache(
+                    keywords=keyword,
+                    new_articles=articles,
+                    surgery_type=study_type_value or '',
+                    journal_rank=data.get('journalRank', 'all'),
+                    year_from=filters['year_from'],
+                    year_to=filters['year_to'],
+                )
+                if new_count > 0:
+                    logger.info(f"Cache: {new_count} new articles merged for '{keyword}'")
+            except Exception as cache_err:
+                logger.warning(f"Cache save failed (non-blocking): {cache_err}")
+
         total_available = min(total_count, max_results)
         effective_page_size = min(page_size, max_results, 200)
         page_count = max(1, math.ceil(total_available / effective_page_size))
         
-        # **NOUVEAU: Sauvegarder dans le cache de base de données**
-        # Seulement si page 1 et qu'on a des résultats
-        if page == 1 and articles:
-            try:
-                CacheManager.save_to_cache(
-                    keywords=keyword,
-                    articles=articles,
-                    surgery_type=filters['study_type'],
-                    journal_rank=journal_rank,
-                    year_from=year_from,
-                    year_to=year_to
-                )
-            except Exception as e:
-                logger.warning(f"Failed to save to cache: {e}")
-        
         payload = {
             "data": articles,
             "total": total_available,
+            "total_on_pubmed": total_count,  # Total réel trouvé sur PubMed (avant limite maxResults)
             "returned": len(articles),
             "page": page,
             "page_size": effective_page_size,
@@ -158,11 +154,8 @@ def search_api(request):
             "error": str(exc)
         }, status=503)
     
-    cache.set(cache_key, payload, 60 * 15)
-    register_cache_key(cache_key)
     return Response({"status": "success", **payload})
 
-@csrf_exempt
 @api_view(['POST'])
 def export_all_results(request):
     """
@@ -174,11 +167,15 @@ def export_all_results(request):
     # Gérer le filtre de rang de revue
     journal_rank = data.get('journalRank', 'all')
     if journal_rank == 'a':
-        # Utiliser les 13 revues de rang A
         journal_filter = ''  # Chaîne vide = filtre sur les 13 revues cibles
+    elif journal_rank == 'nurse':
+        journal_filter = 'nurse'
     else:
-        # 'all' = rechercher dans toutes les revues PubMed
-        journal_filter = 'no_filter'  # Valeur spéciale pour désactiver le filtre
+        journal_filter = 'no_filter'  # 'all' = toutes les revues PubMed
+    
+    # Gérer le filtre de période - support des années personnalisées
+    year_from_input = data.get('yearFrom')
+    year_to_input = data.get('yearTo')
     
     # Récupérer les paramètres de recherche originaux
     filters = dict(
@@ -187,6 +184,8 @@ def export_all_results(request):
         journal_filter=journal_filter,
         region=data.get('regionFilter', ''),
         time_period=data.get('timePeriod', '10'),
+        year_from=year_from_input,
+        year_to=year_to_input,
         sample_size=data.get('sampleSize', '')
     )
 
@@ -198,13 +197,20 @@ def export_all_results(request):
     
     try:
         # Première requête pour connaître le total
+        # Convertir study_type en string si c'est une liste
+        study_type_value = filters['study_type']
+        if isinstance(study_type_value, list):
+            study_type_value = ','.join(study_type_value) if study_type_value else ''
+        
         total_available, first_batch = search_pubmed(
             term=keyword,
             start=0,
             size=BATCH_SIZE,
-            study_type=filters['study_type'],
-            time_period=filters['time_period'],
-            journal_filter=filters['journal_filter']
+            study_type=study_type_value or '',
+            time_period=filters['time_period'] or '',
+            journal_filter=filters['journal_filter'] or '',
+            year_from=filters['year_from'],
+            year_to=filters['year_to']
         )
         
         all_articles = first_batch
@@ -229,9 +235,11 @@ def export_all_results(request):
                         term=keyword,
                         start=start_index,
                         size=BATCH_SIZE,
-                        study_type=filters['study_type'],
-                        time_period=filters['time_period'],
-                        journal_filter=filters['journal_filter']
+                        study_type=study_type_value or '',
+                        time_period=filters['time_period'] or '',
+                        journal_filter=filters['journal_filter'] or '',
+                        year_from=filters['year_from'],
+                        year_to=filters['year_to']
                     )
                     all_articles.extend(batch_articles)
                     logger.info(f"Export: Retrieved {len(batch_articles)} articles in batch {batch_num + 1}")
@@ -260,7 +268,6 @@ def export_all_results(request):
             "error": str(exc)
         }, status=503)
 
-@csrf_exempt
 @api_view(['GET', 'POST'])
 def sample_api(request):
     """
@@ -289,7 +296,6 @@ def sample_api(request):
         }, status=503)
 
 
-@csrf_exempt
 @api_view(['POST'])
 def batch_search_api(request):
     """

@@ -57,6 +57,8 @@ class BatchSearchService:
                 study_type = query.get('study_type', '')
                 journal_rank = query.get('journal_rank', 'all')
                 time_period = query.get('time_period', '10')
+                year_from_input = query.get('year_from')
+                year_to_input = query.get('year_to')
                 
                 if not keywords:
                     return (idx, {
@@ -69,9 +71,9 @@ class BatchSearchService:
                     })
                 
                 # Calculer year_from et year_to
-                year_to = None
-                year_from = None
-                if time_period and time_period.isdigit():
+                year_to = year_to_input
+                year_from = year_from_input
+                if not year_from and not year_to and time_period and time_period.isdigit():
                     from datetime import datetime
                     year_to = datetime.now().year
                     year_from = year_to - int(time_period)
@@ -117,14 +119,22 @@ class BatchSearchService:
                         logger.info(f"Batch [{idx}] PubMed: {keywords} - {len(articles)} articles")
                 else:
                     # Recherche PubMed sans cache
-                    journal_filter = '' if journal_rank == 'a' else 'no_filter'
+                    if journal_rank == 'a':
+                        journal_filter = ''
+                    elif journal_rank == 'nurse':
+                        journal_filter = 'nurse'
+                    else:
+                        journal_filter = 'no_filter'
+                    
                     total_count, articles = search_pubmed(
                         term=keywords,
                         start=0,
                         size=min(max_results_per_query, 200),
                         study_type=study_type,
-                        time_period=time_period,
-                        journal_filter=journal_filter
+                        time_period=time_period if not (year_from or year_to) else '',
+                        journal_filter=journal_filter,
+                        year_from=year_from,
+                        year_to=year_to
                     )
                     logger.info(f"Batch [{idx}] PubMed (no cache): {keywords} - {len(articles)} articles")
                 

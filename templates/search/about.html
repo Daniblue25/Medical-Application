@@ -1,6 +1,6 @@
 <!--
-    Medical Search Platform v3.1 - About Page
-    Copyright (c) 2025 DRCI - CHU Clermont-Ferrand
+    Medical Search Platform v3.2 - About Page
+    Copyright (c) 2025-2026 DRCI - CHU Clermont-Ferrand
     All rights reserved.
     
     Author: FIANKO Kossi Jean-Jacques Daniel
@@ -11,11 +11,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>About - MedSearch v3.1</title>
+    <title>About - MedSearch v3.2</title>
     {% load static %}
     <script src="{% static 'vendor/tailwind.js' %}"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
         .sidebar {
             transition: transform 0.3s ease;
         }
@@ -57,17 +62,17 @@
     <!-- Sidebar -->
     <div class="sidebar bg-blue-900 text-white w-64 flex-shrink-0 transform -translate-x-full md:translate-x-0 fixed h-full z-40">
         <div class="p-4 flex items-center space-x-2 border-b border-blue-800">
-            <button onclick="window.location.href='/'" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.1</button>
+            <button onclick="window.location.href='/'" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.2</button>
         </div>
         <nav class="p-4">
             <div class="mb-6">
                 <h2 class="text-xs uppercase tracking-wider text-blue-400 mb-2">Navigation</h2>
                 <button onclick="window.location.href='/'" class="w-full flex items-center space-x-2 py-2 px-3 rounded hover:bg-blue-800 text-white transition">
-                    <span aria-hidden="true">🔎</span>
+                    <i class="fas fa-search"></i>
                     <span>Search</span>
                 </button>
                 <button onclick="window.location.href='/about'" class="w-full flex items-center space-x-2 py-2 px-3 rounded bg-blue-800 text-white mt-2">
-                    <span aria-hidden="true">ℹ️</span>
+                    <i class="fas fa-info-circle"></i>
                     <span>About</span>
                 </button>
             </div>
@@ -75,11 +80,11 @@
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-800">
             <div class="flex items-center space-x-3">
                 <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center">
-                    <span class="text-sm" aria-hidden="true">👤</span>
+                    <i class="fas fa-user text-sm"></i>
                 </div>
                 <div>
-                    <p class="text-sm font-medium">MedSearch v3.1</p>
-                    <p class="text-xs text-blue-300">Surgical Research</p>
+                    <p class="text-sm font-medium">MedSearch v3.2</p>
+                    <p class="text-xs text-blue-300">Medical & Surgical Research</p>
                 </div>
             </div>
         </div>
@@ -88,7 +93,7 @@
     <!-- Mobile toggle -->
     <div class="md:hidden fixed bottom-4 right-4 z-50">
         <button id="sidebarToggle" class="w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center">
-            <span class="text-xl" aria-hidden="true">☰</span>
+            <i class="fas fa-bars text-xl"></i>
         </button>
     </div>
 
@@ -98,7 +103,7 @@
             <div class="px-4 py-3 flex justify-between items-center">
                 <div>
                     <h1 class="text-xl font-bold text-gray-800 flex items-center">
-                        <span class="mr-2" aria-hidden="true">ℹ️</span>
+                        <i class="fas fa-info-circle mr-2 text-blue-600"></i>
                         About MedSearch
                     </h1>
                     <p class="text-sm text-gray-500">Benchmark & Comparative Analysis</p>
@@ -110,21 +115,22 @@
             <!-- Strategic Positioning -->
             <section class="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-6 fade-in">
                 <div class="flex items-center mb-4">
-                    <span class="text-4xl mr-3" aria-hidden="true">🏥</span>
+                    <i class="fas fa-hospital text-4xl mr-3 text-blue-600"></i>
                     <h2 class="text-2xl font-bold text-gray-900">Strategic Positioning</h2>
                 </div>
                 <p class="text-gray-700 leading-relaxed">
-                    <strong>MedSearch v3.1</strong> positions itself as the reference tool for <strong>high-precision surgical research</strong>. 
+                    <strong>MedSearch</strong> positions itself as the reference tool for <strong>high-precision medical and surgical research</strong>. 
                     Unlike general search engines or purely AI-based solutions, MedSearch prioritizes 
                     <strong>clinical reliability</strong>, <strong>source transparency</strong>, and <strong>workflow efficiency</strong> 
-                    (search → selection → export).
+                    (search → selection → export). Version 3.2 extends its scope to <strong>nursing research</strong> with 144 dedicated journals, 
+                    using a <strong>unified geographic detection</strong> method (last author affiliation) across all search types.
                 </p>
             </section>
 
             <!-- Comparative Table -->
             <section class="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-6 fade-in">
                 <div class="flex items-center mb-4">
-                    <span class="text-4xl mr-3" aria-hidden="true">📊</span>
+                    <i class="fas fa-chart-bar text-4xl mr-3 text-blue-600"></i>
                     <h2 class="text-2xl font-bold text-gray-900">Detailed Comparison Table</h2>
                 </div>
                 <div class="overflow-x-auto">
@@ -132,10 +138,10 @@
                         <thead>
                             <tr>
                                 <th class="text-left">Criteria</th>
-                                <th class="text-left">🩺 MedSearch v3.1</th>
-                                <th class="text-left">📚 PubMed (Standard)</th>
-                                <th class="text-left">🤖 Cure AI / Elicit</th>
-                                <th class="text-left">🔬 Scopus / WoS</th>
+                                <th class="text-left"><i class="fas fa-heartbeat mr-1"></i> MedSearch v3.2</th>
+                                <th class="text-left"><i class="fas fa-book mr-1"></i> PubMed (Standard)</th>
+                                <th class="text-left"><i class="fas fa-robot mr-1"></i> Cure AI / Elicit</th>
+                                <th class="text-left"><i class="fas fa-microscope mr-1"></i> Scopus / WoS</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -148,66 +154,66 @@
                             </tr>
                             <tr>
                                 <td><strong>Focus</strong></td>
-                                <td><strong>Surgery & Clinical</strong></td>
+                                <td><strong>Surgery, Nursing & Clinical</strong></td>
                                 <td>General Biomedical</td>
                                 <td>General Research</td>
                                 <td>Bibliometrics & Academic</td>
                             </tr>
                             <tr>
                                 <td><strong>Specialized Filters</strong></td>
-                                <td>✅ <strong>Surgery</strong> (Hepatic, Gastric...), <strong>Rank A+</strong> (13 Top Journals)</td>
-                                <td>❌ (Generic MeSH only)</td>
-                                <td>❌ (Limited AI filters)</td>
-                                <td>✅ (Discipline, Affiliation)</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Surgery</strong> (13 Top Journals) + <strong>Nursing</strong> (144 Journals)</td>
+                                <td><i class="fas fa-times text-red-500"></i> (Generic MeSH only)</td>
+                                <td><i class="fas fa-times text-red-500"></i> (Limited AI filters)</td>
+                                <td><i class="fas fa-check text-green-500"></i> (Discipline, Affiliation)</td>
                             </tr>
                             <tr>
                                 <td><strong>Batch Search</strong></td>
-                                <td>✅ <strong>Parallel multi-query</strong> (<code>;</code> separator)</td>
-                                <td>❌ (One by one)</td>
-                                <td>❌</td>
-                                <td>❌</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Parallel multi-query</strong> (<code>;</code> separator)</td>
+                                <td><i class="fas fa-times text-red-500"></i> (One by one)</td>
+                                <td><i class="fas fa-times text-red-500"></i></td>
+                                <td><i class="fas fa-times text-red-500"></i></td>
                             </tr>
                             <tr>
                                 <td><strong>Selection & Export</strong></td>
-                                <td>✅ <strong>Fast visual sorting</strong> + Formatted Excel export</td>
-                                <td>❌ (Raw export of everything)</td>
-                                <td>❌ (No structured export)</td>
-                                <td>✅ (Complex export)</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Fast visual sorting</strong> + Formatted Excel export</td>
+                                <td><i class="fas fa-times text-red-500"></i> (Raw export of everything)</td>
+                                <td><i class="fas fa-times text-red-500"></i> (No structured export)</td>
+                                <td><i class="fas fa-check text-green-500"></i> (Complex export)</td>
                             </tr>
                             <tr>
                                 <td><strong>Local Cache</strong></td>
-                                <td>✅ <strong>Yes</strong> (SQLite, 7 days)</td>
-                                <td>❌</td>
-                                <td>❌</td>
-                                <td>❌</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Yes</strong> (SQLite, 7 days)</td>
+                                <td><i class="fas fa-times text-red-500"></i></td>
+                                <td><i class="fas fa-times text-red-500"></i></td>
+                                <td><i class="fas fa-times text-red-500"></i></td>
                             </tr>
                             <tr>
                                 <td><strong>Transparency</strong></td>
-                                <td>✅ <strong>Total</strong> (Raw PubMed data)</td>
-                                <td>✅ Total</td>
-                                <td>⚠️ <strong>Possible hallucinations</strong> (AI summaries)</td>
-                                <td>✅ Total</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Total</strong> (Raw PubMed data)</td>
+                                <td><i class="fas fa-check text-green-500"></i> Total</td>
+                                <td><i class="fas fa-exclamation-triangle text-yellow-500"></i> <strong>Possible hallucinations</strong> (AI summaries)</td>
+                                <td><i class="fas fa-check text-green-500"></i> Total</td>
                             </tr>
                             <tr>
                                 <td><strong>Quality Indicators</strong></td>
-                                <td>✅ <strong>Confidence</strong> (Sample Size, Outcomes, Study Type)</td>
-                                <td>❌</td>
-                                <td>✅ (AI relevance ranking)</td>
-                                <td>✅ (Citations, H-Index)</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Confidence</strong> (Sample Size, Outcomes, Study Type)</td>
+                                <td><i class="fas fa-times text-red-500"></i></td>
+                                <td><i class="fas fa-check text-green-500"></i> (AI relevance ranking)</td>
+                                <td><i class="fas fa-check text-green-500"></i> (Citations, H-Index)</td>
                             </tr>
                             <tr>
                                 <td><strong>Cost</strong></td>
-                                <td>✅ <strong>Free</strong> (Open Access)</td>
-                                <td>✅ Free</td>
-                                <td>💰 Freemium (limited)</td>
-                                <td>💰💰 Very expensive (subscriptions)</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Free</strong> (Open Access)</td>
+                                <td><i class="fas fa-check text-green-500"></i> Free</td>
+                                <td><i class="fas fa-dollar-sign text-gray-500"></i> Freemium (limited)</td>
+                                <td><i class="fas fa-dollar-sign text-gray-500"></i><i class="fas fa-dollar-sign text-gray-500"></i> Very expensive (subscriptions)</td>
                             </tr>
                             <tr>
                                 <td><strong>Interface</strong></td>
-                                <td>✅ <strong>Surgeon-First</strong> (Tailwind, responsive)</td>
-                                <td>⚠️ Austere</td>
-                                <td>✅ Modern (AI)</td>
-                                <td>⚠️ Complex</td>
+                                <td><i class="fas fa-check text-green-500"></i> <strong>Surgeon-First</strong> (Tailwind, responsive)</td>
+                                <td><i class="fas fa-exclamation-triangle text-yellow-500"></i> Austere</td>
+                                <td><i class="fas fa-check text-green-500"></i> Modern (AI)</td>
+                                <td><i class="fas fa-exclamation-triangle text-yellow-500"></i> Complex</td>
                             </tr>
                         </tbody>
                     </table>
@@ -217,7 +223,7 @@
             <!-- Competitive Analysis -->
             <section class="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-6 fade-in">
                 <div class="flex items-center mb-4">
-                    <span class="text-4xl mr-3" aria-hidden="true">🎯</span>
+                    <i class="fas fa-bullseye text-4xl mr-3 text-blue-600"></i>
                     <h2 class="text-2xl font-bold text-gray-900">Competitive Analysis</h2>
                 </div>
 
@@ -227,7 +233,7 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-2">1. PubMed (The Gold Standard)</h3>
                         <p class="text-gray-700 mb-2"><strong>Strength:</strong> Official NIH source. Total comprehensiveness (36+ million articles). Free and open-access.</p>
                         <p class="text-gray-700 mb-2"><strong>Weakness:</strong> Austere 2000s interface, no "professional" filters for surgeons, laborious export (raw CSV difficult to exploit).</p>
-                        <p class="text-gray-700"><strong class="text-blue-600">🚀 MedSearch Advantage:</strong> We use the same PubMed database but with a "Surgeon-First" interface. The "Rank A+" filter saves <strong>80% of time</strong> on manual sorting.</p>
+                        <p class="text-gray-700"><strong class="text-blue-600"><i class="fas fa-rocket"></i> MedSearch Advantage:</strong> We use the same PubMed database but with a "Surgeon-First" interface. The "Rank A+" filter saves <strong>80% of time</strong> on manual sorting.</p>
                     </div>
 
                     <!-- Cure AI / Elicit -->
@@ -235,7 +241,7 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-2">2. Cure AI / Elicit.org (The AI Challengers)</h3>
                         <p class="text-gray-700 mb-2"><strong>Strength:</strong> Impressive automatic summaries via GPT-4, natural language questions, modern interface.</p>
                         <p class="text-gray-700 mb-2"><strong>Weakness:</strong> Risk of <strong>hallucinations</strong> (AI can invent data), "Black Box", no massive formatted Excel export.</p>
-                        <p class="text-gray-700"><strong class="text-purple-600">🚀 MedSearch Advantage:</strong> MedSearch <strong>accelerates</strong> access to verified raw data. Formatted Excel export is <strong>unique in the world</strong> for building systematic reviews.</p>
+                        <p class="text-gray-700"><strong class="text-purple-600"><i class="fas fa-rocket"></i> MedSearch Advantage:</strong> MedSearch <strong>accelerates</strong> access to verified raw data. Formatted Excel export is <strong>unique in the world</strong> for building systematic reviews.</p>
                     </div>
 
                     <!-- Scopus / WoS -->
@@ -243,7 +249,7 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-2">3. Scopus / Web of Science (The Academics)</h3>
                         <p class="text-gray-700 mb-2"><strong>Strength:</strong> Bibliometric power (who cites whom?), multidisciplinary coverage, citation network analysis.</p>
                         <p class="text-gray-700 mb-2"><strong>Weakness:</strong> Very expensive (€5,000 - €50,000 / year), complex, not focused on clinical practice.</p>
-                        <p class="text-gray-700"><strong class="text-green-600">🚀 MedSearch Advantage:</strong> Free, lightweight, fast and focused on care and surgery. Unique batch search (10 parallel terms).</p>
+                        <p class="text-gray-700"><strong class="text-green-600"><i class="fas fa-rocket"></i> MedSearch Advantage:</strong> Free, lightweight, fast and focused on care and surgery. Unique batch search (10 parallel terms).</p>
                     </div>
                 </div>
             </section>
@@ -251,50 +257,59 @@
             <!-- Why MedSearch is Unique -->
             <section class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-100 p-8 mb-6 fade-in">
                 <div class="flex items-center mb-4">
-                    <span class="text-4xl mr-3" aria-hidden="true">🚀</span>
-                    <h2 class="text-2xl font-bold text-gray-900">Why MedSearch v3.1 is Unique?</h2>
+                    <i class="fas fa-rocket text-4xl mr-3 text-blue-600"></i>
+                    <h2 class="text-2xl font-bold text-gray-900">Why MedSearch v3.2 is Unique?</h2>
                 </div>
                 <blockquote class="border-l-4 border-blue-600 pl-4 italic text-lg text-gray-800 mb-4">
-                    "The only tool in the world that combines PubMed's rigor with native surgical filters, 
-                    a batch search engine, and selective export optimized for clinical research."
+                    "The only tool in the world that combines PubMed's rigor with native surgical and nursing filters, 
+                    a batch search engine, smart caching, and selective export optimized for clinical research."
                 </blockquote>
                 <p class="text-gray-700 leading-relaxed">
                     Other platforms bring generative AI to <em>summarize</em> science.<br>
-                    <strong>MedSearch v3.1</strong> brings functional intelligence to <em>structure</em> science 
-                    and enable surgeons to build their own evidence (Evidence-Based Medicine).
+                    <strong>MedSearch v3.2</strong> brings functional intelligence to <em>structure</em> science 
+                    and enable researchers to build their own evidence (Evidence-Based Medicine).
                 </p>
             </section>
 
             <!-- What's New v3.1 -->
             <section class="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-6 fade-in">
                 <div class="flex items-center mb-4">
-                    <span class="text-4xl mr-3" aria-hidden="true">🆕</span>
-                    <h2 class="text-2xl font-bold text-gray-900">What's New in v3.1 (November 2025)</h2>
+                    <i class="fas fa-newspaper text-4xl mr-3 text-blue-600"></i>
+                    <h2 class="text-2xl font-bold text-gray-900">What's New in v3.2 (February 2026)</h2>
                 </div>
 
                 <div class="space-y-4">
+                    <div class="bg-indigo-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-indigo-900 mb-2">A. Nursing Research Support (144 Journals)</h3>
+                        <p class="text-gray-700 text-sm"><strong>Problem solved:</strong> No dedicated search filter for nursing literature.</p>
+                        <p class="text-gray-700 text-sm"><strong>Solution:</strong> New "Nurse" rank option with 144 curated nursing journals.</p>
+                        <p class="text-gray-700 text-sm"><strong>Gain:</strong> Uniform region detection (last author affiliation) across Surgery and Nursing searches.</p>
+                    </div>
+
                     <div class="bg-blue-50 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold text-blue-900 mb-2">A. Intelligent Local Cache (SQLite)</h3>
-                        <p class="text-gray-700 text-sm"><strong>Problem solved:</strong> PubMed has rate limits. Each search consumes an API request.</p>
-                        <p class="text-gray-700 text-sm"><strong>Solution:</strong> 7-day local cache. Identical searches served instantly.</p>
-                        <p class="text-gray-700 text-sm"><strong>Gain:</strong> Response time &lt; 100 ms (vs 2-5 seconds).</p>
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">B. Smart Incremental Cache (SQLite)</h3>
+                        <p class="text-gray-700 text-sm"><strong>Problem solved:</strong> Re-running the same search re-fetched everything from PubMed.</p>
+                        <p class="text-gray-700 text-sm"><strong>Solution:</strong> Incremental merge — only truly new articles are fetched and added to cache. Results served instantly when fresh (&lt; 7 days).</p>
+                        <p class="text-gray-700 text-sm"><strong>Gain:</strong> Response time &lt; 100 ms for cached queries, reduced API load.</p>
                     </div>
 
                     <div class="bg-green-50 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold text-green-900 mb-2">B. Batch Search (Parallel multi-query)</h3>
+                        <h3 class="text-lg font-semibold text-green-900 mb-2">C. Batch Search (Parallel multi-query)</h3>
                         <p class="text-gray-700 text-sm"><strong>Problem solved:</strong> Comparing 10 terms required 10 manual searches.</p>
                         <p class="text-gray-700 text-sm"><strong>Solution:</strong> Separate your terms with <code>;</code> or <strong>new line</strong>. MedSearch launches up to 10 parallel queries.</p>
-                        <p class="text-gray-700 text-sm"><strong>Example:</strong></p>
-                        <div class="bg-white p-2 rounded mt-2 text-xs font-mono">
-                            liver resection; pancreatic surgery; gastric cancer
-                        </div>
-                        <p class="text-gray-700 text-sm mt-2"><strong>Gain:</strong> 10 queries in 8 seconds (vs 30 seconds manually).</p>
+                        <p class="text-gray-700 text-sm"><strong>Gain:</strong> 10 queries in 8 seconds (vs 30 seconds manually).</p>
                     </div>
 
                     <div class="bg-purple-50 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold text-purple-900 mb-2">C. Optimized Excel Export</h3>
-                        <p class="text-gray-700 text-sm"><strong>Added columns:</strong> Sample Size, Study Type, Region, Outcomes.</p>
+                        <h3 class="text-lg font-semibold text-purple-900 mb-2">D. Optimized Excel Export</h3>
+                        <p class="text-gray-700 text-sm"><strong>Columns:</strong> Sample Size, Study Type, Region, Outcomes, Confidence Score.</p>
                         <p class="text-gray-700 text-sm"><strong>Meta-analysis ready format:</strong> Compatible with RevMan, Cochrane, PRISMA.</p>
+                    </div>
+
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-red-900 mb-2">E. Improved Stability & Testing</h3>
+                        <p class="text-gray-700 text-sm"><strong>76 unit tests</strong> covering extractors, region detection, and API views.</p>
+                        <p class="text-gray-700 text-sm">Cleaned dependencies, health check endpoint, and hardened security middleware.</p>
                     </div>
                 </div>
             </section>
@@ -303,14 +318,14 @@
             <section class="bg-gray-800 text-white rounded-xl p-8 fade-in">
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="text-lg font-semibold mb-2">💡 Good to Know</h3>
+                        <h3 class="text-lg font-semibold mb-2"><i class="fas fa-lightbulb mr-2 text-yellow-400"></i> Good to Know</h3>
                         <p class="text-gray-300 text-sm">
-                            MedSearch v3.1 is not a competitor to PubMed or Scopus. It's a <strong>productivity amplifier</strong> 
-                            for surgeon-researchers.
+                            MedSearch v3.2 is not a competitor to PubMed or Scopus. It's a <strong>productivity amplifier</strong> 
+                            for surgeon-researchers and nursing researchers.
                         </p>
                     </div>
                     <div>
-                        <h3 class="text-lg font-semibold mb-2">📞 Contact</h3>
+                        <h3 class="text-lg font-semibold mb-2"><i class="fas fa-envelope mr-2"></i> Contact</h3>
                         <p class="text-gray-300 text-sm">
                             <strong>Author:</strong> FIANKO Kossi Jean-Jacques Daniel<br>
                             <strong>Institution:</strong> DRCI - CHU Clermont-Ferrand<br>
@@ -321,8 +336,8 @@
                 </div>
                 <div class="mt-6 pt-6 border-t border-gray-700 text-center text-gray-400 text-sm">
                     <p><strong>MedSearch = PubMed + Functional Intelligence</strong></p>
-                    <p class="mt-2">Last updated: November 25, 2025</p>
-                    <p class="mt-1">© 2025 DRCI - CHU Clermont-Ferrand. All rights reserved.</p>
+                    <p class="mt-2">Last updated: February 19, 2026</p>
+                    <p class="mt-1">© 2025-2026 DRCI - CHU Clermont-Ferrand. All rights reserved.</p>
                 </div>
             </section>
         </main>
