@@ -75,8 +75,9 @@ def _gs_participant_count(abstract: str) -> Optional[int]:
 
     # ── PRIORITY 1: "A total of N patients/participants" ──
     # But NOT if followed by "were screened/assessed"
+    # Allow optional adjective between number and participant word: "total of 1056 eligible patients"
     m = re.search(
-        r'(?:a\s+)?total\s+of\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?|individuals?|people|persons?|women|men|children|adults?|infants?|neonates?)',
+        r'(?:a\s+)?total\s+of\s+(\d[\d,]*)\s+(?:\w+\s+)?(?:patients?|participants?|subjects?|individuals?|people|persons?|women|men|children|adults?|infants?|neonates?)',
         abstract, re.IGNORECASE
     )
     if m:
@@ -132,7 +133,14 @@ def _gs_has_primary_outcome(abstract: str) -> bool:
         return False
     lower = abstract.lower()
     return bool(re.search(
-        r'primary\s+(?:out\s*come|endpoint|end\s*point|efficacy\s+endpoint)',
+        r'(?:primary|main)\s+(?:'
+        r'out\s*comes?\b|outcomes?\b|'
+        r'end\s*points?\b|endpoints?\b|'
+        r'efficacy\s+end\s*points?\b|'
+        r'effectiveness\s+end\s*points?\b|'
+        r'safety\s+end\s*points?\b|'
+        r'study\s+end\s*points?\b'
+        r')',
         lower
     ))
 

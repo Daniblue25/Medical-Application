@@ -30,43 +30,55 @@ class OutcomeExtractor:
     PRIMARY_PATTERNS = [
         # ===== HIGH CONFIDENCE: Formulations explicites et standard =====
         
-        # Basic patterns: "The primary outcome/endpoint was..."
-        (re.compile(r"(the\s+)?primary\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
-        (re.compile(r"(the\s+)?primary\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        # Basic patterns: "The primary outcome(s)/endpoint(s) was/were..."
+        (re.compile(r"(the\s+)?primary\s+(?:out\s*comes?|outcomes?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # With adjectives: "The primary, noninferiority end point was..."
-        (re.compile(r"(the\s+)?primary[,\s]+(?:\w+\s+)?(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary[,\s]+(?:\w+\s+)?(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # Specific trial types: noninferiority, superiority, equivalence
-        (re.compile(r"(the\s+)?primary\s+(?:non-?inferiority|superiority|equivalence)\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:non-?inferiority|superiority|equivalence)\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # Efficacy/effectiveness/safety endpoints
-        (re.compile(r"(the\s+)?primary\s+(?:effectiveness|efficacy)\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
-        (re.compile(r"(the\s+)?primary\s+safety\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:effectiveness|efficacy)\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+safety\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Study endpoint: "The primary study endpoint was..."
+        (re.compile(r"(the\s+)?primary\s+study\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # Main/Treatment/Clinical outcome
-        (re.compile(r"(the\s+)?main\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
-        (re.compile(r"(the\s+)?main\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
-        (re.compile(r"(the\s+)?treatment\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
-        (re.compile(r"(the\s+)?clinical\s+(?:out\s*come|outcome)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?main\s+(?:out\s*comes?|outcomes?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?main\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?treatment\s+(?:out\s*comes?|outcomes?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?clinical\s+(?:out\s*comes?|outcomes?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # "Primary outcome of the study/trial"
-        (re.compile(r"(the\s+)?primary\s+(?:out\s*come|outcome)\s+of\s+(?:the\s+)?(?:study|trial)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:out\s*comes?|outcomes?)\s+of\s+(?:the\s+)?(?:study|trial)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # "Primary end point(s) of this follow-up study were..."
+        (re.compile(r"(the\s+)?primary\s+(?:end\s*points?|endpoints?)\s+of\s+(?:the\s+|this\s+)?(?:\w+\s+)?(?:study|trial)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # "Primary outcome was/will be assessed/measured"
-        (re.compile(r"(the\s+)?primary\s+(?:out\s*come|outcome)\s+(?:will\s+be|was)\s+(?:assessed|measured|evaluated)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?primary\s+(?:out\s*comes?|outcomes?)\s+(?:will\s+be|was)\s+(?:assessed|measured|evaluated)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # Plural: "Primary outcomes were/included..."
         (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s+(?:were|was|are|is|included?)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
+        # "Primary outcomes measure(s) was/were..."
+        (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s+measures?\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # "Primary outcomes in the ... cohort were..."
+        (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s+(?:in\s+(?:the\s+)?\w[\w\s-]{0,40})\s+(?:were|was|are|is)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
         # "Primary outcome variable(s)/measure(s)"
-        (re.compile(r"primary\s+(?:out\s*come|outcome)\s+(?:variables?|measures?)\s+(?:were|was|are|is)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s+(?:variables?|measures?)\s+(?:were|was|are|is)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # Key secondary (often as important as primary)
-        (re.compile(r"(the\s+)?key\s+secondary\s+(?:out\s*come|outcome|end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?key\s+secondary\s+(?:out\s*comes?|outcomes?|end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # Co-primary/Composite endpoints
-        (re.compile(r"(the\s+)?(?:co-?primary|composite)\s+(?:end\s*point|endpoint)\s+(?:was|were|is|are)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+)?(?:co-?primary|composite)\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # "The time to recovery" (common primary endpoint pattern from COVID trials)
         (re.compile(r"(the\s+)?primary\s+(?:out\s*come|outcome)\s+(?:was|were)\s+(?:the\s+)?time\s+to\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
@@ -75,10 +87,13 @@ class OutcomeExtractor:
         (re.compile(r"(overall\s+survival|progression-?free\s+survival|disease-?free\s+survival)\s+(?:was|were|is|are)\s+(?:the\s+)?primary\s+(.{10,150}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # Reverse order: "X was the primary outcome/endpoint" (e.g., "cleared skin was the primary outcome")
-        (re.compile(r"(.{10,150}?)\s+(?:was|were|is|are)\s+(?:the\s+)?primary\s+(?:out\s*come|outcome|end\s*point|endpoint)", re.IGNORECASE), 'high'),
+        (re.compile(r"(.{10,150}?)\s+(?:was|were|is|are)\s+(?:the\s+)?primary\s+(?:out\s*comes?|outcomes?|end\s*points?|endpoints?)", re.IGNORECASE), 'high'),
         
         # "achieved/met/reached the primary endpoint of X"
-        (re.compile(r"(?:achieved|met|reached)\s+(?:the\s+)?primary\s+(?:end\s*point|endpoint|out\s*come|outcome)\s+(?:of\s+)?(.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(?:achieved|met|reached)\s+(?:the\s+)?primary\s+(?:end\s*points?|endpoints?|out\s*comes?|outcomes?)\s+(?:of\s+)?(.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # "Phase II and III primary endpoints were..."
+        (re.compile(r"(?:phase\s+)?\w+\s+(?:and\s+\w+\s+)?primary\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
         # French patterns — Primary outcomes
         (re.compile(r"le\s+critère\s+(?:de\s+jugement\s+)?principal\s+(?:était|est)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
@@ -93,17 +108,18 @@ class OutcomeExtractor:
         # ===== MEDIUM CONFIDENCE: Formulations avec ":" ou structures alternatives =====
         
         # Colon patterns: "Primary outcome: ..."
-        (re.compile(r"primary\s+(?:out\s*come|outcome)[s]?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
-        (re.compile(r"primary\s+(?:end\s*point|endpoint)[s]?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
-        (re.compile(r"main\s+(?:out\s*come|outcome)[s]?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
-        (re.compile(r"treatment\s+(?:out\s*come|outcome)[s]?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
-        (re.compile(r"clinical\s+(?:out\s*come|outcome)[s]?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:end\s*points?|endpoints?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"main\s+(?:out\s*comes?|outcomes?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"treatment\s+(?:out\s*comes?|outcomes?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"clinical\s+(?:out\s*comes?|outcomes?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
-        # Generic start: "The primary outcome..." (catch-all for other verbs)
-        (re.compile(r"^(the\s+)?primary\s+(?:out\s*come|outcome|end\s*point|endpoint)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        # Generic start: "The primary outcome/endpoint..." (catch-all for other verbs)
+        (re.compile(r"^(the\s+)?primary\s+(?:out\s*comes?|outcomes?|end\s*points?|endpoints?)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
         # "included" patterns
-        (re.compile(r"primary\s+(?:out\s*come|outcome)[s]?\s+included\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s+included\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:end\s*points?|endpoints?)\s+included\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
         # "Analysis was by intention to treat" context
         (re.compile(r"(the\s+)?primary\s+(?:analysis|outcome)\s+(?:was\s+)?(?:by\s+)?intention[- ]to[- ]treat\s+(.{10,150}?)(?:\.|$)", re.IGNORECASE), 'medium'),

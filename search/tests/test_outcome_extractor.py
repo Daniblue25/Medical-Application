@@ -227,3 +227,62 @@ class TestOutcomeExtractorFrench:
         abstract = "Les complications post-opératoires incluaient une infection du site opératoire (8%) et un hématome (3%) confirmés en analyse."
         result = OutcomeExtractor.extract_outcomes(abstract)
         assert result['adverse_events'] is not None
+
+
+class TestPluralEndpointPatterns:
+    """Tests for plural 'end points', 'endpoints', 'outcomes' patterns (Phase 9)."""
+
+    def test_primary_end_points_plural_space(self):
+        """'Primary end points were shoulder ROM and strength...'"""
+        abstract = "Primary end points were shoulder ROM and strength at 1 and 6 months postsurgery."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+        assert 'shoulder' in result['primary_outcome'].lower()
+
+    def test_primary_endpoints_plural(self):
+        """'Phase II and III primary endpoints were resection rate...'"""
+        abstract = "Phase II and III primary endpoints were resection rate and overall survival, respectively."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+        assert 'resection rate' in result['primary_outcome'].lower()
+
+    def test_primary_end_points_of_study(self):
+        """'The primary end points of this follow-up study were...'"""
+        abstract = "The primary end points of this follow-up study were 5-year OS and DFS."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+        assert 'OS' in result['primary_outcome']
+
+    def test_primary_outcomes_measure(self):
+        """'The primary outcomes measure was incidence of...'"""
+        abstract = "The primary outcomes measure was incidence of major complication or death within 30 days of operation."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+        assert 'complication' in result['primary_outcome'].lower()
+
+    def test_primary_outcomes_in_cohort(self):
+        """'Primary outcomes in the intention-to-treat cohort were...'"""
+        abstract = "Primary outcomes in the intention-to-treat cohort were feasibility and effectiveness measured by weight loss."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+        assert 'feasibility' in result['primary_outcome'].lower()
+
+    def test_primary_study_endpoint(self):
+        """'The primary study endpoint was disease-free survival.'"""
+        abstract = "The primary study endpoint was disease-free survival."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+        assert 'disease-free survival' in result['primary_outcome'].lower()
+
+    def test_main_endpoints_plural(self):
+        """'The main endpoints were overall survival and progression-free survival.'"""
+        abstract = "The main endpoints were overall survival and progression-free survival at 3 years."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+
+    def test_primary_effectiveness_end_point(self):
+        """'The primary effectiveness end point was incidence of EAD.'"""
+        abstract = "The primary effectiveness end point was incidence of EAD as measured by standard criteria."
+        result = OutcomeExtractor.extract_outcomes(abstract)
+        assert result['primary_outcome'] is not None
+        assert 'EAD' in result['primary_outcome']
