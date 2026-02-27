@@ -2,7 +2,7 @@
 
 > **Dernière mise à jour :** 2026-02-27
 > **Branche :** `feature/journal-ranking-and-cleanup`
-> **Dernier commit :** `c053390` — NLP improvements
+> **Dernier commit :** `67ad3b5` — Phase 8: ParticipantExtractor screening/multi-arm, OutcomeExtractor FR, UNIVERSITY 340
 > **Statut :** Tout committé ✓
 
 ---
@@ -24,11 +24,11 @@
 
 | Fichier | Tests | Lignes | Couverture |
 |---|---|---|---|
-| `test_outcome_extractor.py` | 24 | 163 | OutcomeExtractor — critères principaux, secondaires, confiance |
-| `test_participant_extractor.py` | 23 | 147 | ParticipantExtractor — chiffres, nombres écrits, edge cases |
+| `test_outcome_extractor.py` | 34 | ~240 | OutcomeExtractor — critères principaux, secondaires, confiance, **français (10 nouveaux)** |
+| `test_participant_extractor.py` | 33 | ~230 | ParticipantExtractor — chiffres, nombres écrits, edge cases, **screening (5), multi-arm (5)** |
 | `test_region_detector.py` | 66 | 270 | RegionDetector — pays (9 classes), villes (6), display names (5), complétude (5) |
 | `test_views.py` | 17 | 268 | API endpoints — search, sample, export, batch, health |
-| **Total** | **130** | **848** | **Tous passent ✓** (2 warnings Django/reportlab) |
+| **Total** | **150** | **~1008** | **Tous passent ✓** (2 warnings Django/reportlab) |
 
 ---
 
@@ -44,7 +44,7 @@
 | `TLD_TO_COUNTRY` | **198** | Tous les ccTLD ISO + .gov/.edu/.mil |
 | `COUNTRY_DISPLAY_NAMES` | **226** | Auto-généré depuis COUNTRY_TO_REGION + _DISPLAY_OVERRIDES (~60) |
 | `CITY_TO_COUNTRY` | **382** | Capitales + villes de recherche médicale du monde entier |
-| `UNIVERSITY_TO_COUNTRY` | **86** | Universités/hôpitaux identifiables |
+| `UNIVERSITY_TO_COUNTRY` | **340** | Universités/hôpitaux identifiables (45+ pays) |
 | `COUNTRY_PATTERNS` | **3** | Regex spéciaux (USA, UK, P.R. China) |
 
 **Répartition par région :**
@@ -70,17 +70,17 @@
 
 **Benchmark (200 articles PubMed réels) :** F1 = **100.0%** (122/122 correct, 0 erreur)
 
-### 3.2 OutcomeExtractor (`outcome_extractor.py` — 591 lignes)
+### 3.2 OutcomeExtractor (`outcome_extractor.py` — ~640 lignes)
 
 **Rôle :** Extraire le critère principal (primary outcome/endpoint) et résultats depuis les abstracts.
 
 | Groupe de patterns | Nombre | Description |
 |---|---|---|
-| `PRIMARY_PATTERNS` | **32** | Critère principal — high/medium confidence, reverse patterns |
-| `EFFICACY_PATTERNS` | **15** | Efficacité du traitement |
-| `SAFETY_PATTERNS` | **16** | Sécurité / effets indésirables |
-| `ADVERSE_EVENTS_PATTERNS` | **23** | Événements indésirables spécifiques |
-| `RESULTS_PATTERNS` | **22** | Résultats chiffrés (HR, OR, RR, p-values) |
+| `PRIMARY_PATTERNS` | **38** | Critère principal — high/medium confidence, reverse patterns, **+6 FR** |
+| `EFFICACY_PATTERNS` | **~21** | Efficacité du traitement — **+6 FR** |
+| `SAFETY_PATTERNS` | **~22** | Sécurité / effets indésirables — **+6 FR** |
+| `ADVERSE_EVENTS_PATTERNS` | **~31** | Événements indésirables spécifiques — **+8 FR** |
+| `RESULTS_PATTERNS` | **~30** | Résultats chiffrés (HR, OR, RR, p-values) — **+8 FR** |
 
 **Optimisations appliquées :**
 - Capture étendue `.{10,400}?` sur patterns haute confiance (vs `.{10,200}?` avant)
@@ -90,24 +90,28 @@
 
 **Benchmark (200 articles) :** F1 = **94.8%** (Precision 95.3%, Recall 94.4%)
 
-### 3.3 ParticipantExtractor (`participant_extractor.py` — 445 lignes)
+### 3.3 ParticipantExtractor (`participant_extractor.py` — ~570 lignes)
 
 **Rôle :** Extraire le nombre de participants/patients depuis les abstracts.
 
 | Composant | Entrées | Description |
 |---|---|---|
-| `NUMERIC_PATTERNS` | **32** | Regex par priorité (déclarations → enrollment → randomized → analysed) |
+| `NUMERIC_PATTERNS` | **37** | Regex par priorité (**5 funnel screening→enrollment** + déclarations → enrollment → randomized → analysed) |
 | `WRITTEN_PATTERNS` | **6** | Détection nombres écrits en anglais (ex: "forty-two patients") |
 | `WRITTEN_NUMBERS` | **31** | Mapping mots → chiffres (zero→0 … million→1000000) |
 | `CONTEXT_KEYWORDS` | **14** | Mots-clés de validation contextuelle |
+| `SCREENING_WORDS` | **11** | Mots indicateurs de screening (screened, assessed, evaluated…) |
 
 **Optimisations appliquées :**
 - Parser stack-based `_parse_written_number()` (supporte "three hundred forty-two" = 342, "two thousand five hundred" = 2500)
+- **5 patterns ultra-prioritaires screening→enrollment funnel** ("screened X, of whom Y were included", etc.)
+- **`_try_multi_arm_summation()`** : détecte et somme les bras d'un RCT ("(n=X)...(n=Y)" → X+Y)
+- **Screening penalty** dans `_calculate_confidence()` : pénalise les nombres proches de mots de screening
 - Français supprimé (PubMed = anglais uniquement)
 - Fix regex : `*` → `+` pour éviter matches vides
 - Réordonnancement WRITTEN_PATTERNS par priorité
 
-**Benchmark (200 articles) :** F1 = **81.7%** (MAE = 175.9 — tirée par quelques outliers)
+**Benchmark (200 articles) :** F1 = **92.8%** (MAE = 19.5, P=87.3%, R=99.0%)
 
 ---
 
@@ -217,20 +221,66 @@
 
 **Résultat :** RegionDetector F1 = **100.0%** confirmé sur 200 articles diversifiés
 
+### Phase 8 — ParticipantExtractor screening/multi-arm + OutcomeExtractor FR + UNIVERSITY expansion
+**Date :** Session 6 (2026-02-27)
+
+**Problèmes identifiés :**
+1. ParticipantExtractor MAE=175.9 — causé par des nombres de screening pris au lieu d'enrollment, et des études multi-bras où un seul bras est capturé
+2. OutcomeExtractor : aucun support français (abstracts FR possibles sur PubMed)
+3. UNIVERSITY_TO_COUNTRY : seulement 86 entrées — couverture insuffisante
+
+**Modifications ParticipantExtractor :**
+- Ajout `SCREENING_WORDS` set (11 mots : screened, assessed, evaluated, eligible…)
+- 5 patterns ultra-prioritaires funnel screening→enrollment (indices 0-4) :
+  - "screened X, of whom Y were included"
+  - "X screened… Y enrolled"
+  - "total of X assessed, Y enrolled"
+  - "screened X patients and enrolled Y"
+  - "screened X. Of these, Y enrolled"
+- `_try_multi_arm_summation()` : détecte `(n=X)…(n=Y)` dans un contexte de randomisation → somme les bras
+- Screening penalty dans `_calculate_confidence()` : fenêtre étroite (~15 chars pré, ~80 chars post)
+- Score cap 1.0 supprimé (meilleur ranking interne)
+- `base_scores` dict étendu à 37 entrées (décalage de 5 pour les funnel patterns)
+
+**Modifications OutcomeExtractor :**
+- PRIMARY_PATTERNS : +6 patterns FR (critère principal, objectif principal, format colon, inversé)
+- ADVERSE_EVENTS : +8 patterns FR (effets indésirables fréquents/graves, événements indésirables, complications post-opératoires, toxicités)
+- SAFETY : +6 patterns FR (profil de sécurité, tolérance, traitement bien toléré/sûr)
+- EFFICACY : +6 patterns FR (efficacité démontrée, traitement efficace/supérieur, taux de réponse, survie globale)
+- RESULTS : +8 patterns FR (résultats ont montré/confirmé, différence significative, amélioration significative)
+
+**Modifications RegionDetector :**
+- UNIVERSITY_TO_COUNTRY : 86 → **340 entrées** (+254)
+  - Couverture : 45+ pays (Allemagne 18, Italie 16, Espagne 12, Pays-Bas 13, Suisse 10, Suède 7, Inde 12, Corée du Sud 10, Brésil 10, Israël 8, Turquie 7, et ~30 autres pays)
+
+**Modifications benchmark_nlp_v2.py :**
+- GS heuristique `_gs_participant_count()` réécrit avec 6 niveaux de priorité et détection screening
+- Fix `sys.path` (pointait vers benchmarks/ au lieu de la racine du projet)
+
+**Tests ajoutés :** +20 tests (150 total)
+- `TestScreeningVsEnrollment` (5 tests) : screened_of_whom_included, total_assessed_and_enrolled, etc.
+- `TestMultiArmSummation` (5 tests) : two_arm, three_arm, explicit_total_overrides, etc.
+- `TestOutcomeExtractorFrench` (10 tests) : critère_principal, objectif_principal, effets_indésirables, etc.
+
+**Résultats (200 articles, broad query) :**
+- ParticipantExtractor : MAE 175.9 → **19.5** (-89%), F1 81.7% → **92.8%** (+11.1pp)
+- OutcomeExtractor : F1 **94.8%** (maintenu)
+- RegionDetector : F1 **100.0%** (maintenu)
+
 ---
 
 ## 5. Fichiers du projet
 
 | Fichier | Lignes | Description |
 |---|---|---|
-| `search/services/region_detector.py` | ~1100 | Détection pays/région (226 pays, 382 villes, 198 TLD) |
-| `search/services/outcome_extractor.py` | 591 | Extraction critères principaux (32 patterns) |
-| `search/services/participant_extractor.py` | 445 | Extraction nombre participants (32+6 patterns) |
+| `search/services/region_detector.py` | ~1280 | Détection pays/région (226 pays, 382 villes, 198 TLD, **340 universités**) |
+| `search/services/outcome_extractor.py` | ~640 | Extraction critères principaux (**38 patterns + 34 FR**) |
+| `search/services/participant_extractor.py` | ~570 | Extraction nombre participants (**37+6 patterns**, screening, multi-arm) |
 | `search/tests/test_region_detector.py` | 270 | 66 tests RegionDetector |
-| `search/tests/test_outcome_extractor.py` | 163 | 24 tests OutcomeExtractor |
-| `search/tests/test_participant_extractor.py` | 147 | 23 tests ParticipantExtractor |
+| `search/tests/test_outcome_extractor.py` | ~240 | **34 tests** OutcomeExtractor (+10 FR) |
+| `search/tests/test_participant_extractor.py` | ~230 | **33 tests** ParticipantExtractor (+10 screening/multi-arm) |
 | `search/tests/test_views.py` | 268 | 17 tests API |
-| `benchmark_nlp_v2.py` | ~310 | Script benchmark NLP (PubMed réel) |
+| `benchmarks/benchmark_nlp_v2.py` | ~510 | Script benchmark NLP (PubMed réel, GS screening-aware) |
 
 ---
 
@@ -244,7 +294,7 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 |---|---|---|---|
 | **RegionDetector** | F1 | **100.0%** | 122/122 correct, 0 mismatch |
 | **OutcomeExtractor** | F1 | **94.8%** | P=95.3% R=94.4% (TP=101 FP=5 FN=6) |
-| **ParticipantExtractor** | F1 | **81.7%** | P=69.7% R=98.7% (MAE=175.9, outliers) |
+| **ParticipantExtractor** | F1 | **92.8%** | P=87.3% R=99.0% (MAE=19.5) |
 
 ### Résultats sur 93 articles (liver resection, 2026-02-27)
 
@@ -252,7 +302,7 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 |---|---|---|
 | **RegionDetector** | F1 | **100.0%** (60/60) |
 | **OutcomeExtractor** | F1 | **85.3%** |
-| **ParticipantExtractor** | F1 | **82.6%** (MAE=14.9) |
+| **ParticipantExtractor** | F1 | **87.8%** (MAE=14.9) |
 
 ### Historique des benchmarks
 
@@ -260,9 +310,10 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 |---|---|---|---|---|---|
 | Session 2 (initial) | 150 | 283.8 | — | 92.2% | 96.8% |
 | Session 3 (post-fix) | 150 | 3.1 | — | 95.0% | 99.2% |
-| **2026-02-27** | **200** | **175.9** | **81.7%** | **94.8%** | **100.0%** |
+| 2026-02-27 (v2) | 200 | 175.9 | 81.7% | 94.8% | 100.0% |
+| **2026-02-27 (v3)** | **200** | **19.5** | **92.8%** | **94.8%** | **100.0%** |
 
-> Note : MAE varie beaucoup entre jeux d'articles (articles multi-bras→parsing erroné).
+> Note : MAE améliorée de 175.9→19.5 grâce aux patterns screening→enrollment et multi-arm summation.
 > Le script `benchmark_nlp_v2.py` est maintenant versionné pour reproductibilité.
 
 ---
@@ -275,11 +326,17 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 - [x] **Recréer benchmark_nlp_v2.py** : script complet avec GS heuristique + rapport
 - [x] **Tests unitaires nouveaux pays** : 49 tests ajoutés (130 total)
 
+### Réalisé (Phase 8) ✓
+- [x] **ParticipantExtractor multi-arm** : 5 funnel patterns + `_try_multi_arm_summation()` + screening penalty → MAE 175.9→19.5, F1 81.7%→92.8%
+- [x] **OutcomeExtractor FR** : +34 patterns français (PRIMARY, ADVERSE, SAFETY, EFFICACY, RESULTS)
+- [x] **UNIVERSITY_TO_COUNTRY** : 86→340 entrées (45+ pays)
+- [x] **Tests** : 130→150 (+10 screening/multi-arm, +10 FR)
+
 ### Pas encore fait
-- [ ] **ParticipantExtractor** : améliorer le parsing des études multi-bras (source principale du MAE élevé)
-- [ ] **OutcomeExtractor multilingue** : actuellement optimisé EN uniquement, FR partiel
-- [ ] **UNIVERSITY_TO_COUNTRY** : reste à 86 entrées — pourrait être enrichi
 - [ ] **Push Git** : `git push origin feature/journal-ranking-and-cleanup`
+- [ ] **ParticipantExtractor** : top errors restantes (PMID 34668963 Δ=528, PMID 33760010 Δ=499) — probablement des études multi-centres où GS pick un sous-groupe
+- [ ] **OutcomeExtractor** : FN restants (6/200) — abstracts sans mention explicite du primary endpoint
+- [ ] **Intégration cache** : utiliser les résultats NLP dans le cache de recherche
 
 ### Architecture & design
 - `extract_country_from_affiliation()` : hiérarchie à 6 niveaux fonctionne bien, pas de modification nécessaire

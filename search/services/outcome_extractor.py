@@ -80,9 +80,15 @@ class OutcomeExtractor:
         # "achieved/met/reached the primary endpoint of X"
         (re.compile(r"(?:achieved|met|reached)\s+(?:the\s+)?primary\s+(?:end\s*point|endpoint|out\s*come|outcome)\s+(?:of\s+)?(.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
-        # French patterns
+        # French patterns — Primary outcomes
         (re.compile(r"le\s+critère\s+(?:de\s+jugement\s+)?principal\s+(?:était|est)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
         (re.compile(r"l'(?:objectif|critère)\s+principal\s+(?:était|est)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"le\s+(?:critère|objectif)\s+principal\s+de\s+(?:l'étude|l'essai|cette\s+étude)\s+(?:était|est)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"critère\s+(?:de\s+jugement\s+)?principal\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"objectif\s+principal\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"le\s+critère\s+principal\s+(?:d'évaluation|de\s+jugement)\s+(?:était|est|a\s+été)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(?:les?\s+)?(?:critères?|objectifs?)\s+(?:principaux|secondaires?)\s+(?:étaient|sont|incluaient)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(.{10,150}?)\s+(?:était|est)\s+le\s+critère\s+(?:de\s+jugement\s+)?principal", re.IGNORECASE), 'high'),
         
         # ===== MEDIUM CONFIDENCE: Formulations avec ":" ou structures alternatives =====
         
@@ -161,8 +167,15 @@ class OutcomeExtractor:
         (re.compile(r"(toxicit(?:y|ies)\s+(?:were|was|included?|occurred)[^.]*\d*.{10,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         (re.compile(r"(safety\s+(?:end\s*point|endpoint|outcome)[s]?\s+(?:were|was|included?)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
-        # French
+        # French — Adverse events
         (re.compile(r"((?:effets?\s+)?(?:indésirables?|secondaires?)\s+(?:étaient|ont\s+été)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:les?\s+)?effets?\s+indésirables?\s+(?:les?\s+plus?\s+)?(?:fréquents?|graves?|sévères?)\s+(?:étaient|sont|incluaient|ont\s+été)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:les?\s+)?événements?\s+indésirables?\s+(?:graves?\s+)?(?:étaient|ont\s+été|sont\s+survenus)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:les?\s+)?complications?\s+(?:post-?opératoires?\s+)?(?:étaient|ont\s+été|incluaient|comprenaient)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:les?\s+)?effets?\s+(?:secondaires?|indésirables?)[^.]*\d+\s*%.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"effets?\s+indésirables?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:aucun\s+)?effet\s+indésirable\s+(?:grave|sérieux|majeur)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(toxicités?\s+(?:de\s+grade\s+[3-5]\s+)?(?:étaient|ont\s+été|incluaient)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
         # "The risks of X were similar between groups"
         (re.compile(r"((?:the\s+)?risks?\s+of\s+[^.]*(?:were|was)\s+similar\s+between.{10,150}?)(?:\.|$)", re.IGNORECASE), 'medium'),
@@ -209,6 +222,14 @@ class OutcomeExtractor:
         # "Treatment resulted in significant improvement"
         (re.compile(r"((?:treatment|therapy)\s+resulted\s+in\s+(?:significant|marked|substantial)\s+(?:improvement|reduction|increase).{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         (re.compile(r"((?:efficacy|effectiveness)\s+was\s+(?:assessed|evaluated|measured).{10,150}?)(?:\.|$)", re.IGNORECASE), 'low'),
+        
+        # French — Efficacité
+        (re.compile(r"((?:l')?efficacité\s+(?:du\s+traitement\s+)?(?:était|est|a\s+été)\s+(?:démontrée|confirmée|observée|supérieure|non-?inférieure)[^.]*\d*.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:le\s+traitement|la\s+thérapie|l'intervention)\s+(?:était|a\s+été|s'est\s+(?:montré|avéré))\s+(?:efficace|supérieur|non-?inférieur)[^.]*\d*.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:le\s+)?taux\s+de\s+(?:réponse|succès|guérison)[^.]*\d+\s*%.{5,150}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:la\s+)?survie\s+(?:globale|sans\s+progression|sans\s+récidive)\s+(?:était|a\s+été)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"efficacité\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:l')?efficacité\s+(?:était|est|a\s+été)\s+(?:évaluée|mesurée|analysée).{10,150}?)(?:\.|$)", re.IGNORECASE), 'low'),
         
         # ===== LOW: Vague mentions =====
         (re.compile(r"((?:efficacy|effectiveness)\s+was\s+(?:assessed|evaluated|measured).{10,150}?)(?:\.|$)", re.IGNORECASE), 'low'),
@@ -277,6 +298,16 @@ class OutcomeExtractor:
         # "In the present study, we found..."
         (re.compile(r"(in\s+(?:the\s+)?(?:present|current|this)\s+study[^.]*(?:found|observed|showed).{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
+        # French — Résultats
+        (re.compile(r"((?:les?\s+)?résultats?\s+(?:ont?\s+)?(?:montré|démontré|révélé|indiqué|suggéré)\s+(?:que\s+)?.{15,300}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:les?\s+)?résultats?\s+(?:de\s+(?:l'étude|l'essai|cette\s+étude|notre\s+étude)\s+)?(?:ont\s+)?(?:montré|confirmé|révélé)\s+.{15,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:les?\s+)?résultats?\s+(?:principaux|préliminaires|finaux)\s+(?:sont|étaient|montrent)\s+.{15,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"résultats?\s*:\s*(.{10,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:nous\s+avons|on\s+a)\s+(?:observé|constaté|trouvé|montré|démontré)\s+(?:que\s+)?.{15,250}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:il\s+(?:existe|y\s+a(?:vait)?)\s+)?(?:une\s+)?différence\s+significative[^.]*\d+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:une\s+)?(?:amélioration|réduction|diminution|augmentation)\s+significative[^.]*\d+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:la\s+)?durée\s+(?:médiane\s+)?(?:de\s+)?(?:survie|suivi|hospitalisation)\s+(?:était|a\s+été)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
         # ===== LOW: Generic/vague results mentions =====
         (re.compile(r"(similar\s+results?\s+(?:were|was)\s+(?:obtained|observed|found).{10,150}?)(?:\.|$)", re.IGNORECASE), 'low'),
         
@@ -327,9 +358,15 @@ class OutcomeExtractor:
         # "Tolerability was acceptable/good"
         (re.compile(r"(tolerability\s+(?:was|were)\s+(?:acceptable|good|favorable|excellent).{10,150}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
-        # French
-        (re.compile(r"((?:la\s+)?tolérance\s+(?:était|est)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
-        (re.compile(r"(sécurité\s+(?:d'emploi\s+)?(?:était|est)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        # French — Safety/Tolérance
+        (re.compile(r"((?:la\s+)?tolérance\s+(?:était|est|a\s+été)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(sécurité\s+(?:d'emploi\s+)?(?:était|est|a\s+été)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:le\s+)?profil\s+de\s+(?:sécurité|tolérance)\s+(?:était|est|a\s+été)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:la\s+)?tolérance\s+(?:du\s+traitement\s+)?(?:était|a\s+été)\s+(?:bonne|acceptable|satisfaisante|excellente).{5,150}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:le\s+traitement|la\s+procédure)\s+(?:était|a\s+été)\s+(?:bien\s+toléré|sûr|sécuritaire).{5,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:aucun\s+)?(?:problème|signal)\s+de\s+sécurité\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"sécurité\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"tolérance\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
         # ===== LOW: Vague mentions =====
         

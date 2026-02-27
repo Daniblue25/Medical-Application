@@ -696,12 +696,352 @@ UNIVERSITY_TO_COUNTRY = {
     "fudan": "china",
     "shanghai jiao tong": "china",
     "zhejiang university": "china",
+    "nanjing university": "china",
+    "sun yat-sen": "china",
+    "wuhan university": "china",
+    "sichuan university": "china",
+    "chinese academy of sciences": "china",
+    "west china hospital": "china",
+    "huazhong university": "china",
+    "zhongshan hospital": "china",
+    "tongji university": "china",
     
     # Japan
     "tokyo university": "japan",
     "kyoto university": "japan",
     "osaka university": "japan",
     "tohoku university": "japan",
+    "keio university": "japan",
+    "nagoya university": "japan",
+    "hokkaido university": "japan",
+    "kyushu university": "japan",
+    "jikei university": "japan",
+    "juntendo university": "japan",
+    
+    # Germany
+    "charité": "germany",
+    "charite": "germany",
+    "heidelberg university": "germany",
+    "lmu munich": "germany",
+    "tum": "germany",
+    "technische universität münchen": "germany",
+    "university of freiburg": "germany",
+    "university of tübingen": "germany",
+    "university of göttingen": "germany",
+    "humboldt": "germany",
+    "max planck": "germany",
+    "rwth aachen": "germany",
+    "hannover medical school": "germany",
+    "university hospital hamburg": "germany",
+    "university of bonn": "germany",
+    "university of cologne": "germany",
+    "universitätsklinikum": "germany",
+    "universitaetsklinikum": "germany",
+    "dkfz": "germany",
+    
+    # Italy
+    "università di": "italy",
+    "universita di": "italy",
+    "sapienza": "italy",
+    "politecnico di milano": "italy",
+    "university of bologna": "italy",
+    "university of padova": "italy",
+    "university of milan": "italy",
+    "university of florence": "italy",
+    "university of turin": "italy",
+    "university of naples": "italy",
+    "university of rome": "italy",
+    "humanitas": "italy",
+    "san raffaele": "italy",
+    "istituto nazionale": "italy",
+    "irccs": "italy",
+    "gemelli": "italy",
+    
+    # Spain
+    "universidad de": "spain",
+    "universitat de": "spain",
+    "hospital clínic": "spain",
+    "hospital clinic": "spain",
+    "hospital la paz": "spain",
+    "hospital val d'hebron": "spain",
+    "hospital gregorio marañón": "spain",
+    "university of barcelona": "spain",
+    "university of navarra": "spain",
+    "cnic": "spain",
+    "cnio": "spain",
+    "hospital ramón y cajal": "spain",
+    
+    # Netherlands
+    "erasmus mc": "netherlands",
+    "erasmus university": "netherlands",
+    "leiden university": "netherlands",
+    "university of amsterdam": "netherlands",
+    "umc utrecht": "netherlands",
+    "radboud": "netherlands",
+    "maastricht university": "netherlands",
+    "vrije universiteit": "netherlands",
+    "groningen university": "netherlands",
+    "vu amsterdam": "netherlands",
+    "university medical center": "netherlands",
+    "lumc": "netherlands",
+    "amc amsterdam": "netherlands",
+    
+    # Sweden
+    "karolinska": "sweden",
+    "uppsala university": "sweden",
+    "lund university": "sweden",
+    "gothenburg university": "sweden",
+    "stockholm university": "sweden",
+    "sahlgrenska": "sweden",
+    "umeå university": "sweden",
+    
+    # Denmark
+    "copenhagen university": "denmark",
+    "aarhus university": "denmark",
+    "rigshospitalet": "denmark",
+    "odense university": "denmark",
+    "aalborg university": "denmark",
+    
+    # Norway
+    "university of oslo": "norway",
+    "ntnu": "norway",
+    "haukeland university hospital": "norway",
+    "university of bergen": "norway",
+    "oslo university hospital": "norway",
+    
+    # Finland
+    "university of helsinki": "finland",
+    "university of turku": "finland",
+    "university of tampere": "finland",
+    "university of oulu": "finland",
+    "hus helsinki university hospital": "finland",
+    
+    # Switzerland
+    "eth zürich": "switzerland",
+    "eth zurich": "switzerland",
+    "epfl": "switzerland",
+    "university of zurich": "switzerland",
+    "university of bern": "switzerland",
+    "university of geneva": "switzerland",
+    "university of basel": "switzerland",
+    "university of lausanne": "switzerland",
+    "chuv": "switzerland",
+    "inselspital": "switzerland",
+    
+    # Belgium
+    "ku leuven": "belgium",
+    "université libre de bruxelles": "belgium",
+    "ulb": "belgium",
+    "ucl louvain": "belgium",
+    "university of ghent": "belgium",
+    "university of antwerp": "belgium",
+    "university of liège": "belgium",
+    
+    # Austria
+    "medical university of vienna": "austria",
+    "university of vienna": "austria",
+    "medical university of graz": "austria",
+    "university of innsbruck": "austria",
+    
+    # South Korea
+    "seoul national university": "south korea",
+    "yonsei university": "south korea",
+    "samsung medical center": "south korea",
+    "asan medical center": "south korea",
+    "korea university": "south korea",
+    "kaist": "south korea",
+    "sungkyunkwan": "south korea",
+    "severance hospital": "south korea",
+    "catholic university of korea": "south korea",
+    "kyung hee university": "south korea",
+    
+    # India
+    "aiims": "india",
+    "all india institute": "india",
+    "iit": "india",
+    "tata memorial": "india",
+    "cmch vellore": "india",
+    "pgimer": "india",
+    "jipmer": "india",
+    "nimhans": "india",
+    "sgpgi": "india",
+    "manipal": "india",
+    "apollo hospital": "india",
+    "fortis healthcare": "india",
+    
+    # Brazil
+    "universidade de são paulo": "brazil",
+    "universidade de sao paulo": "brazil",
+    "usp": "brazil",
+    "unicamp": "brazil",
+    "ufrj": "brazil",
+    "unifesp": "brazil",
+    "fiocruz": "brazil",
+    "hospital albert einstein": "brazil",
+    "hospital sírio-libanês": "brazil",
+    "hospital das clínicas": "brazil",
+    
+    # Mexico
+    "unam": "mexico",
+    "instituto nacional de": "mexico",
+    "tec de monterrey": "mexico",
+    "hospital general de méxico": "mexico",
+    
+    # Argentina
+    "university of buenos aires": "argentina",
+    "uba": "argentina",
+    "hospital italiano": "argentina",
+    "fundación favaloro": "argentina",
+    
+    # Turkey
+    "hacettepe": "turkey",
+    "ankara university": "turkey",
+    "istanbul university": "turkey",
+    "marmara university": "turkey",
+    "ege university": "turkey",
+    "cerrahpaşa": "turkey",
+    "cerrahpasa": "turkey",
+    
+    # Israel
+    "hebrew university": "israel",
+    "weizmann institute": "israel",
+    "technion": "israel",
+    "tel aviv university": "israel",
+    "hadassah": "israel",
+    "sheba medical center": "israel",
+    "rabin medical center": "israel",
+    "soroka": "israel",
+    
+    # Iran
+    "tehran university": "iran",
+    "shahid beheshti": "iran",
+    "isfahan university": "iran",
+    "mashhad university": "iran",
+    "tabriz university": "iran",
+    
+    # Poland
+    "jagiellonian university": "poland",
+    "university of warsaw": "poland",
+    "medical university of warsaw": "poland",
+    "medical university of gdansk": "poland",
+    "medical university of lodz": "poland",
+    
+    # Greece
+    "university of athens": "greece",
+    "aristotle university": "greece",
+    "university of thessaloniki": "greece",
+    "university of crete": "greece",
+    
+    # Portugal
+    "university of lisbon": "portugal",
+    "university of porto": "portugal",
+    "university of coimbra": "portugal",
+    
+    # Ireland
+    "trinity college dublin": "ireland",
+    "university college dublin": "ireland",
+    "royal college of surgeons in ireland": "ireland",
+    "rcsi": "ireland",
+    "university of galway": "ireland",
+    
+    # Singapore
+    "national university of singapore": "singapore",
+    "nus": "singapore",
+    "nanyang technological": "singapore",
+    "duke-nus": "singapore",
+    "singapore general hospital": "singapore",
+    
+    # Taiwan
+    "national taiwan university": "taiwan",
+    "national cheng kung university": "taiwan",
+    "taipei veterans general hospital": "taiwan",
+    "chang gung": "taiwan",
+    "china medical university, taichung": "taiwan",
+    
+    # Thailand
+    "mahidol university": "thailand",
+    "chulalongkorn": "thailand",
+    "siriraj hospital": "thailand",
+    "ramathibodi hospital": "thailand",
+    
+    # Saudi Arabia
+    "king saud university": "saudi arabia",
+    "king abdulaziz university": "saudi arabia",
+    "king faisal specialist hospital": "saudi arabia",
+    "kfshrc": "saudi arabia",
+    "alfaisal university": "saudi arabia",
+    
+    # Egypt
+    "cairo university": "egypt",
+    "ain shams university": "egypt",
+    "alexandria university": "egypt",
+    "mansoura university": "egypt",
+    
+    # South Africa
+    "university of cape town": "south africa",
+    "university of witwatersrand": "south africa",
+    "stellenbosch university": "south africa",
+    "university of pretoria": "south africa",
+    "university of kwazulu-natal": "south africa",
+    
+    # Nigeria
+    "university of ibadan": "nigeria",
+    "university of lagos": "nigeria",
+    "obafemi awolowo university": "nigeria",
+    
+    # Kenya
+    "university of nairobi": "kenya",
+    "aga khan university hospital, nairobi": "kenya",
+    
+    # New Zealand
+    "university of auckland": "new zealand",
+    "university of otago": "new zealand",
+    
+    # Malaysia
+    "university of malaya": "malaysia",
+    "universiti kebangsaan malaysia": "malaysia",
+    "universiti sains malaysia": "malaysia",
+    
+    # Colombia
+    "universidad de los andes": "colombia",
+    "universidad nacional de colombia": "colombia",
+    "fundación santa fe de bogotá": "colombia",
+    
+    # Chile
+    "universidad de chile": "chile",
+    "pontificia universidad católica de chile": "chile",
+    
+    # Czech Republic
+    "charles university": "czech republic",
+    "masaryk university": "czech republic",
+    
+    # Hungary
+    "semmelweis university": "hungary",
+    "university of debrecen": "hungary",
+    
+    # Romania
+    "university of bucharest": "romania",
+    "carol davila university": "romania",
+    
+    # Pakistan
+    "aga khan university": "pakistan",
+    "university of health sciences, lahore": "pakistan",
+    
+    # Bangladesh
+    "university of dhaka": "bangladesh",
+    "bsmmu": "bangladesh",
+    
+    # Vietnam
+    "hanoi medical university": "vietnam",
+    "ho chi minh city university": "vietnam",
+    
+    # Philippines
+    "university of the philippines": "philippines",
+    "philippine general hospital": "philippines",
+    
+    # Indonesia
+    "university of indonesia": "indonesia",
+    "gadjah mada university": "indonesia",
 }
 
 # ════════════════════════════════════════════════════════════════════════════════

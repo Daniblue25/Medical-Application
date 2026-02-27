@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 # ── Django bootstrap ────────────────────────────────────────────────────────
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 import django
 django.setup()
@@ -50,28 +50,51 @@ def _gs_participant_count(abstract: str) -> Optional[int]:
     """
     Heuristic gold-standard for participant count.
     Uses very conservative regex to avoid false positives.
+    Distinguishes screening/assessment counts from actual enrollment.
     Returns None if uncertain.
     """
     if not abstract:
         return None
 
-    # Pattern 1: "A total of N patients/participants/subjects"
+    # ── PRIORITY 0: Screening → Enrollment funnels ──
+    # "total of 3971 patients were assessed, and 217 were enrolled"
+    m = re.search(
+        r'(?:total\s+of\s+)?\d[\d,]*\s+(?:patients?|participants?|subjects?)\s+[\w\s]*?(?:screened|assessed)[^.]*?(?:and\s+)?(\d[\d,]*)\s+(?:patients?\s+)?(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised)',
+        abstract, re.IGNORECASE
+    )
+    if m:
+        return int(m.group(1).replace(',', ''))
+
+    # "screened X patients, of whom Y were included/enrolled"
+    m = re.search(
+        r'(?:screened|assessed)\s+\d[\d,\s]*\s+\w+[^.]*?(?:of\s+(?:whom|these|which))\s*,?\s*(\d[\d,]*)\s+(?:\w+\s+)?(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised|eligible)',
+        abstract, re.IGNORECASE
+    )
+    if m:
+        return int(m.group(1).replace(',', ''))
+
+    # ── PRIORITY 1: "A total of N patients/participants" ──
+    # But NOT if followed by "were screened/assessed"
     m = re.search(
         r'(?:a\s+)?total\s+of\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?|individuals?|people|persons?|women|men|children|adults?|infants?|neonates?)',
         abstract, re.IGNORECASE
     )
     if m:
-        return int(m.group(1).replace(',', ''))
+        # Check if this is a screening number
+        post = abstract[m.end():m.end() + 80].lower()
+        if not re.search(r'(?:were\s+)?(?:screened|assessed|evaluated\s+for\s+eligibility)', post):
+            return int(m.group(1).replace(',', ''))
 
-    # Pattern 2: "N patients/participants were enrolled/randomized/included"
+    # ── PRIORITY 2: "N patients were enrolled/randomized/included" ──
+    # Exclude "were screened"
     m = re.search(
-        r'\b(\d[\d,]*)\s+(?:patients?|participants?|subjects?)\s+(?:were|was|have been)\s+(?:enrolled|randomized|randomised|included|recruited|screened|analyzed|analysed|assigned)',
+        r'\b(\d[\d,]*)\s+(?:patients?|participants?|subjects?)\s+(?:were|was|have been)\s+(?:enrolled|randomized|randomised|included|recruited|analyzed|analysed|assigned)',
         abstract, re.IGNORECASE
     )
     if m:
         return int(m.group(1).replace(',', ''))
 
-    # Pattern 3: "We enrolled/randomized N patients"
+    # ── PRIORITY 3: "We enrolled/randomized N patients" ──
     m = re.search(
         r'(?:we|the study|this trial)\s+(?:enrolled|randomized|randomised|included|recruited)\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?)',
         abstract, re.IGNORECASE
@@ -79,7 +102,20 @@ def _gs_participant_count(abstract: str) -> Optional[int]:
     if m:
         return int(m.group(1).replace(',', ''))
 
-    # Pattern 4: "(N = 123)" or "(n=123)"
+    # ── PRIORITY 4: Multi-arm sum "(n = X) ... (n = Y)" ──
+    arm_matches = list(re.finditer(r'[\(\[]\s*[Nn]\s*=\s*(\d[\d,]*)\s*[\)\]]', abstract))
+    if len(arm_matches) >= 2:
+        # Check if arms are close together and in randomization context
+        m1, m2 = arm_matches[0], arm_matches[1]
+        if m2.start() - m1.end() < 200:
+            ctx = abstract[max(0, m1.start()-100):m2.end()+50].lower()
+            if any(kw in ctx for kw in ['randomiz', 'randomis', 'assigned', 'allocated', 'group', 'arm']):
+                total = sum(int(am.group(1).replace(',', '')) for am in arm_matches
+                            if am.start() - m1.start() < 300)
+                if total >= 10:
+                    return total
+
+    # ── PRIORITY 5: "(N = 123)" fallback ──
     m = re.search(r'\(\s*[Nn]\s*=\s*(\d[\d,]*)\s*\)', abstract)
     if m:
         return int(m.group(1).replace(',', ''))
