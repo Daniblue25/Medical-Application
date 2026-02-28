@@ -2,8 +2,8 @@
 
 > **Dernière mise à jour :** 2026-02-28
 > **Branche :** `feature/journal-ranking-and-cleanup`
-> **Dernier commit :** `092038c` — Phase 9: OutcomeExtractor plural fix (F1 94.8%→98.7%), GS heuristic improvements
-> **Statut :** Tout committé ✓
+> **Dernier commit :** Phase 10: Validation multi-spécialités 3 niveaux (717 articles, 10 spécialités)
+> **Statut :** En cours de commit
 
 ---
 
@@ -314,6 +314,9 @@
 | `search/tests/test_participant_extractor.py` | ~230 | **33 tests** ParticipantExtractor (+10 screening/multi-arm) |
 | `search/tests/test_views.py` | 268 | 17 tests API |
 | `benchmarks/benchmark_nlp_v2.py` | ~520 | Script benchmark NLP (PubMed réel, GS screening-aware, **GS amélioré v4**) |
+| `benchmarks/benchmark_multispecialty.py` | ~460 | **Niveau 1** — Benchmark 10 spécialités × 100 articles (1000 cible) |
+| `benchmarks/prepare_gold_standard.py` | ~250 | **Niveau 2** — Préparation annotation humaine (100 articles, JSON+CSV) |
+| `benchmarks/test_regression_nlp.py` | ~510 | **Niveau 3** — 14 tests de non-régression NLP (seuils + baseline) |
 
 ---
 
@@ -350,6 +353,32 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 > Note : v4 — OE F1 amélioré de 94.8%→98.7% grâce aux patterns pluriels (endpoints/outcomes) et 6 nouveaux patterns.
 > GS heuristiques améliorées : PE P1 adjective gap, OE expanded matching (main, plurals, study endpoint).
 
+### Résultats multi-spécialités — 717 articles, 10 spécialités (2026-02-28) — Niveau 1
+
+| Spécialité | Articles | PE F1 | OE F1 | RD F1 |
+|---|---|---|---|---|
+| Chirurgie hépatique | 93 | 86.9% | 91.6% | 100.0% |
+| Chirurgie cardiaque | 100 | 86.7% | 95.5% | 100.0% |
+| Orthopédie | 32 | 73.7% | 100.0% | 100.0% |
+| Neurochirurgie | 51 | 90.0% | 100.0% | 100.0% |
+| Chirurgie pédiatrique | 11 | 66.7% | 100.0% | 100.0% |
+| Oncologie chirurgicale | 100 | 95.7% | 99.2% | 100.0% |
+| Nursing / Soins infirmiers | 30 | 97.1% | 92.9% | 100.0% |
+| Méta-analyses | 100 | 85.7% | 85.7% | 100.0% |
+| Études observationnelles | 100 | 79.2% | 92.7% | 100.0% |
+| Cas rares / Séries de cas | 100 | 68.4% | 95.2% | 100.0% |
+| **GLOBAL** | **717** | **86.6%** | **95.1%** | **100.0%** |
+
+**Intervalles de confiance (95%) :**
+- PE F1: 86.6% ± 3.9% (IC95: [82.7%, 90.5%], n=287)
+- OE F1: 95.1% ± 1.6% (IC95: [93.5%, 96.7%], n=717)
+- RD F1: 100.0% (n=390)
+
+**Observations :**
+- OE F1 varie de 85.7% (méta-analyses) à 100.0% (ortho, neuro, pédiatrie)
+- PE F1 plus faible sur cas rares (68.4%) et pédiatrie (66.7%) — petits échantillons
+- RD F1 = 100.0% sur toutes les spécialités
+
 ---
 
 ## 7. Points d'attention & améliorations futures
@@ -373,7 +402,13 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 - [x] **Analyse erreurs** : top PE errors = erreurs GS (pas extracteur), FN OE = pluriels manquants, FP OE = extractions correctes ignorées par GS
 - [x] **Tests** : 150→158 (+8 plural endpoint patterns)
 
+### Réalisé (Phase 10 — Validation) ✓
+- [x] **Niveau 1** : benchmark multi-spécialités 717 articles / 10 spécialités → `benchmark_multispecialty.py`
+- [x] **Niveau 2** : framework annotation humaine 100 articles → `prepare_gold_standard.py` + JSON/CSV
+- [x] **Niveau 3** : 14 tests de non-régression → `test_regression_nlp.py` (seuils + baseline, pytest compatible)
+
 ### Pas encore fait
+- [ ] **Niveau 2 annotation** : annoter manuellement les 100 articles (4-6h de travail humain)
 - [ ] **Intégration cache** : utiliser les résultats NLP dans le cache de recherche
 - [ ] **ParticipantExtractor** : erreurs restantes essentiellement des erreurs GS (multi-centres, sous-groupes) — amélioration marginale possible
 
