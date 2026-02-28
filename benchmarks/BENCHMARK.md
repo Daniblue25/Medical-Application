@@ -2,7 +2,7 @@
 
 > **Dernière mise à jour :** 2026-02-28
 > **Branche :** `feature/journal-ranking-and-cleanup`
-> **Dernier commit :** Phase 10: Validation multi-spécialités 3 niveaux (717 articles, 10 spécialités)
+> **Dernier commit :** Phase 10b: Tests E2E + Benchmark temporel (13 tests E2E, 150 articles temporel)
 > **Statut :** En cours de commit
 
 ---
@@ -28,7 +28,9 @@
 | `test_participant_extractor.py` | 33 | ~230 | ParticipantExtractor — chiffres, nombres écrits, edge cases, **screening (5), multi-arm (5)** |
 | `test_region_detector.py` | 66 | 270 | RegionDetector — pays (9 classes), villes (6), display names (5), complétude (5) |
 | `test_views.py` | 17 | 268 | API endpoints — search, sample, export, batch, health |
-| **Total** | **158** | **~1068** | **Tous passent ✓** (2 warnings Django/reportlab) |
+| `benchmarks/test_end_to_end.py` | 13 | ~400 | E2E — PubMed réel, export, cache, NLP consistance |
+| `benchmarks/test_regression_nlp.py` | 14 | ~510 | Régression NLP — seuils F1/MAE/Recall + baseline |
+| **Total** | **185** | **~2246** | **Tous passent ✓** |
 
 ---
 
@@ -317,6 +319,8 @@
 | `benchmarks/benchmark_multispecialty.py` | ~460 | **Niveau 1** — Benchmark 10 spécialités × 100 articles (1000 cible) |
 | `benchmarks/prepare_gold_standard.py` | ~250 | **Niveau 2** — Préparation annotation humaine (100 articles, JSON+CSV) |
 | `benchmarks/test_regression_nlp.py` | ~510 | **Niveau 3** — 14 tests de non-régression NLP (seuils + baseline) |
+| `benchmarks/test_end_to_end.py` | ~400 | **E2E** — 13 tests intégration réelle (PubMed live, export, cache) |
+| `benchmarks/benchmark_temporal.py` | ~380 | **Temporel** — Benchmark NLP par décennie (2000-2025, biais temporel) |
 
 ---
 
@@ -379,6 +383,31 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 - PE F1 plus faible sur cas rares (68.4%) et pédiatrie (66.7%) — petits échantillons
 - RD F1 = 100.0% sur toutes les spécialités
 
+### Benchmark temporel — 150 articles, 5 périodes (2026-02-28)
+
+| Période | Articles | PE F1 | PE MAE | OE F1 | RD F1 |
+|---|---|---|---|---|---|
+| 2000-2005 | 30 | 88.0% | 6.5 | 100.0% | 100.0% |
+| 2006-2010 | 30 | 91.7% | 2.2 | 93.3% | 100.0% |
+| 2011-2015 | 30 | 96.6% | 14.9 | 80.0% | 100.0% |
+| 2016-2020 | 30 | 89.7% | 24.7 | 100.0% | 100.0% |
+| 2021-2025 | 30 | 88.2% | 60.1 | 100.0% | 100.0% |
+
+**Analyse de biais temporel :**
+- PE F1 range: 88.0%-96.6% (delta=8.6pp) — biais modéré
+- OE F1 range: 80.0%-100.0% (delta=20.0pp) — artefact petit échantillon (n=30/période)
+- RD F1 = 100.0% sur toutes les périodes
+
+### Tests End-to-End — 13 tests (2026-02-28)
+
+| Classe | Tests | Description |
+|---|---|---|
+| TestPubMedFetchAndNLP | 7 | Fetch PubMed réel → extraction NLP (sample_size, primary_outcome, region) |
+| TestNLPReExtraction | 3 | Consistance NLP : ré-extraction = même résultat |
+| TestExportEndToEnd | 2 | Export Excel (XLSX valide) + PDF (PDF valide) |
+| TestSearchAPICacheFlow | 1 | Search → cache hit → résultats identiques |
+| **Total** | **13** | **Tous passent ✓** (30s, réseau requis) |
+
 ---
 
 ## 7. Points d'attention & améliorations futures
@@ -406,6 +435,8 @@ Query : `"surgery OR chemotherapy OR clinical trial"` (RCT only)
 - [x] **Niveau 1** : benchmark multi-spécialités 717 articles / 10 spécialités → `benchmark_multispecialty.py`
 - [x] **Niveau 2** : framework annotation humaine 100 articles → `prepare_gold_standard.py` + JSON/CSV
 - [x] **Niveau 3** : 14 tests de non-régression → `test_regression_nlp.py` (seuils + baseline, pytest compatible)
+- [x] **Tests E2E** : 13 tests intégration réelle → `test_end_to_end.py` (PubMed live, export, cache)
+- [x] **Benchmark temporel** : 150 articles / 5 périodes → `benchmark_temporal.py` (2000-2025, biais détecté)
 
 ### Pas encore fait
 - [ ] **Niveau 2 annotation** : annoter manuellement les 100 articles (4-6h de travail humain)

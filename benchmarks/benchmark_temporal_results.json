@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "date": "2026-02-28T13:52:58.542882",
+    "total_articles": 150,
+    "periods": 5,
+    "per_period_target": 30,
+    "query": "surgery OR clinical trial OR randomized",
+    "duration_sec": 30.0
+  },
+  "periods": [
+    {
+      "id": "2000-2005",
+      "name": "2000-2005",
+      "year_from": "2000",
+      "year_to": "2005",
+      "article_count": 30,
+      "pe": {
+        "mae": 6.5,
+        "f1": 88.0,
+        "precision": 78.6,
+        "recall": 100.0,
+        "evaluated": 14,
+        "tp": 11,
+        "fp": 3,
+        "fn": 0
+      },
+      "oe": {
+        "f1": 100.0,
+        "precision": 100.0,
+        "recall": 100.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "tn": 27
+      },
+      "rd": {
+        "f1": 100.0,
+        "tp": 11,
+        "mismatches": 0,
+        "evaluated": 11
+      }
+    },
+    {
+      "id": "2006-2010",
+      "name": "2006-2010",
+      "year_from": "2006",
+      "year_to": "2010",
+      "article_count": 30,
+      "pe": {
+        "mae": 2.2,
+        "f1": 91.7,
+        "precision": 84.6,
+        "recall": 100.0,
+        "evaluated": 13,
+        "tp": 11,
+        "fp": 2,
+        "fn": 0
+      },
+      "oe": {
+        "f1": 93.3,
+        "precision": 100.0,
+        "recall": 87.5,
+        "tp": 7,
+        "fp": 0,
+        "fn": 1,
+        "tn": 22
+      },
+      "rd": {
+        "f1": 100.0,
+        "tp": 12,
+        "mismatches": 0,
+        "evaluated": 12
+      }
+    },
+    {
+      "id": "2011-2015",
+      "name": "2011-2015",
+      "year_from": "2011",
+      "year_to": "2015",
+      "article_count": 30,
+      "pe": {
+        "mae": 14.9,
+        "f1": 96.6,
+        "precision": 93.3,
+        "recall": 100.0,
+        "evaluated": 15,
+        "tp": 14,
+        "fp": 1,
+        "fn": 0
+      },
+      "oe": {
+        "f1": 80.0,
+        "precision": 100.0,
+        "recall": 66.7,
+        "tp": 4,
+        "fp": 0,
+        "fn": 2,
+        "tn": 24
+      },
+      "rd": {
+        "f1": 100.0,
+        "tp": 18,
+        "mismatches": 0,
+        "evaluated": 18
+      }
+    },
+    {
+      "id": "2016-2020",
+      "name": "2016-2020",
+      "year_from": "2016",
+      "year_to": "2020",
+      "article_count": 30,
+      "pe": {
+        "mae": 24.7,
+        "f1": 89.7,
+        "precision": 81.2,
+        "recall": 100.0,
+        "evaluated": 16,
+        "tp": 13,
+        "fp": 3,
+        "fn": 0
+      },
+      "oe": {
+        "f1": 100.0,
+        "precision": 100.0,
+        "recall": 100.0,
+        "tp": 20,
+        "fp": 0,
+        "fn": 0,
+        "tn": 10
+      },
+      "rd": {
+        "f1": 100.0,
+        "tp": 12,
+        "mismatches": 0,
+        "evaluated": 12
+      }
+    },
+    {
+      "id": "2021-2025",
+      "name": "2021-2025",
+      "year_from": "2021",
+      "year_to": "2025",
+      "article_count": 30,
+      "pe": {
+        "mae": 60.1,
+        "f1": 88.2,
+        "precision": 78.9,
+        "recall": 100.0,
+        "evaluated": 19,
+        "tp": 15,
+        "fp": 4,
+        "fn": 0
+      },
+      "oe": {
+        "f1": 100.0,
+        "precision": 100.0,
+        "recall": 100.0,
+        "tp": 25,
+        "fp": 0,
+        "fn": 0,
+        "tn": 5
+      },
+      "rd": {
+        "f1": 100.0,
+        "tp": 20,
+        "mismatches": 0,
+        "evaluated": 20
+      }
+    }
+  ]
+}
