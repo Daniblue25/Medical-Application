@@ -601,6 +601,32 @@ TLD_TO_COUNTRY = {
     'nc': 'new caledonia', 'pf': 'french polynesia',
 }
 
+# ════════════════════════════════════════════════════════════════════════════════
+# Abréviations d'états US — collisions fréquentes avec les TLD de pays
+# (MA → Morocco, MD → Moldova, NC → New Caledonia, CA → Canada, PA → Panama, etc.)
+# ════════════════════════════════════════════════════════════════════════════════
+US_STATE_ABBREVIATIONS = {
+    'al', 'ak', 'az', 'ar', 'ca', 'co', 'ct', 'de', 'fl', 'ga',
+    'hi', 'id', 'il', 'in', 'ia', 'ks', 'ky', 'la', 'ma', 'md',
+    'me', 'mi', 'mn', 'ms', 'mo', 'mt', 'ne', 'nv', 'nh', 'nj',
+    'nm', 'ny', 'nc', 'nd', 'oh', 'ok', 'or', 'pa', 'ri', 'sc',
+    'sd', 'tn', 'tx', 'ut', 'vt', 'va', 'wa', 'wv', 'wi', 'wy',
+    'dc',  # District of Columbia
+}
+
+US_STATE_NAMES = {
+    'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado',
+    'connecticut', 'delaware', 'florida', 'georgia', 'hawaii', 'idaho',
+    'illinois', 'indiana', 'iowa', 'kansas', 'kentucky', 'louisiana',
+    'maine', 'maryland', 'massachusetts', 'michigan', 'minnesota',
+    'mississippi', 'missouri', 'montana', 'nebraska', 'nevada',
+    'new hampshire', 'new jersey', 'new mexico', 'new york',
+    'north carolina', 'north dakota', 'ohio', 'oklahoma', 'oregon',
+    'pennsylvania', 'rhode island', 'south carolina', 'south dakota',
+    'tennessee', 'texas', 'utah', 'vermont', 'virginia', 'washington',
+    'west virginia', 'wisconsin', 'wyoming', 'district of columbia',
+}
+
 # Mapping Universités -> Pays (Inférence forte)
 UNIVERSITY_TO_COUNTRY = {
     # UK
@@ -1222,9 +1248,18 @@ def extract_country_from_affiliation(affiliation: str) -> Optional[str]:
         match = re.search(pattern, affiliation)
         if match:
             country_text = normalize_country(match.group(1))
+            
             # Validation stricte: le pays trouvé DOIT être dans nos mappings
+            # (vérifié AVANT les états US pour gérer "Georgia" → pays d'Europe)
             if country_text in COUNTRY_TO_REGION:
                 return country_text
+            
+            # Vérifier si c'est une abréviation d'état US (MA, MD, NC, CA...)
+            # ou un nom d'état US (California, Massachusetts...)
+            # Ces collisions avec les TLD sont très fréquentes dans les affiliations US
+            if country_text in US_STATE_ABBREVIATIONS or country_text in US_STATE_NAMES:
+                return 'usa'
+            
             # Essayer aussi en TLD si c'est court (ex: 'uk' au lieu de 'united kingdom')
             if country_text in TLD_TO_COUNTRY:
                 return TLD_TO_COUNTRY[country_text]
@@ -1232,8 +1267,11 @@ def extract_country_from_affiliation(affiliation: str) -> Optional[str]:
     # ════════════════════════════════════════════════════════════
     # PRIORITÉ 2 : NOM D'UNIVERSITÉ CONNU (très fiable)
     # ════════════════════════════════════════════════════════════
-    for uni, country in UNIVERSITY_TO_COUNTRY.items():
-         if uni in affiliation_lower:
+    # Tri par longueur décroissante pour éviter les sous-chaînes
+    # (ex: "ucl" ne doit pas matcher avant "ucla" ou "ucl louvain")
+    for uni, country in sorted(UNIVERSITY_TO_COUNTRY.items(), key=lambda x: len(x[0]), reverse=True):
+        # Utiliser des frontières de mot pour éviter les faux positifs
+        if re.search(r'\b' + re.escape(uni) + r'\b', affiliation_lower):
             return country
     
     # ════════════════════════════════════════════════════════════

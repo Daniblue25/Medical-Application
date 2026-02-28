@@ -50,6 +50,11 @@ class OutcomeExtractor:
         # Main/Treatment/Clinical outcome
         (re.compile(r"(the\s+)?main\s+(?:out\s*comes?|outcomes?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         (re.compile(r"(the\s+)?main\s+(?:end\s*points?|endpoints?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Main outcome measure(s) was/were (JAMA, NEJM style)
+        # ex: "The main outcome measure was rebleeding", "Our main outcome measures were mortality..."
+        (re.compile(r"(the\s+|our\s+)?main\s+(?:out\s*comes?|outcomes?)\s+measures?\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(the\s+|our\s+)?main\s+(?:end\s*points?|endpoints?)\s+measures?\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         (re.compile(r"(the\s+)?treatment\s+(?:out\s*comes?|outcomes?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         (re.compile(r"(the\s+)?clinical\s+(?:out\s*comes?|outcomes?)\s+(?:was|were|is|are)\s+(.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
         
@@ -113,6 +118,11 @@ class OutcomeExtractor:
         (re.compile(r"main\s+(?:out\s*comes?|outcomes?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         (re.compile(r"treatment\s+(?:out\s*comes?|outcomes?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         (re.compile(r"clinical\s+(?:out\s*comes?|outcomes?)\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # "Main outcomes and measures:" (JAMA structured abstract format)
+        # ex: "Main outcomes and measures: 30-day mortality and complication rates."
+        (re.compile(r"main\s+(?:out\s*comes?|outcomes?)\s+(?:and\s+)?measures?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"primary\s+(?:out\s*comes?|outcomes?)\s+(?:and\s+)?measures?\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
         # Generic start: "The primary outcome/endpoint..." (catch-all for other verbs)
         (re.compile(r"^(the\s+)?primary\s+(?:out\s*comes?|outcomes?|end\s*points?|endpoints?)\s+(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),

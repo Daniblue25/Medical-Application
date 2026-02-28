@@ -70,8 +70,8 @@ class ParticipantExtractor:
         # "enrolling 700 participants"
         r'enrolling\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
         
-        # "119 patients" ou "119 participants" (simple mais efficace en début)
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        # "119 patients" / "612 burned children" / "100 deceased donors" (broad match)
+        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:(?:consecutive|eligible|enrolled|study|deceased|obese|adult|pediatric|surgical|hospitalized|burned|selected|total|medical)\s+)*(?:participants?|patients?|subjects?|individuals?|cases?|children|neonates?|infants?|donors?|adults?|women|men|volunteers?|students?)',
         
         # SECONDAIRES: Formats avec N = (souvent sous-groupes)
         # Sample size patterns
@@ -139,6 +139,12 @@ class ParticipantExtractor:
         # Entre parenthèses ou crochets (souvent précisions, donc basse priorité)
         r'\([\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))[\s\w]*\)',
         r'\[[\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))[\s\w]*\]',
+
+        # "310 were randomized" / "120 were randomly assigned" (no patient noun)
+        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+were\s+(?:randomly\s+)?(?:randomized|randomised|assigned|allocated|enrolled|included|recruited)',
+
+        # "7775 total participants" (number before "total")
+        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+total\s+(?:participants?|patients?|subjects?)',
     ]
     
     # Reusable sub-patterns for written numbers (English only, PubMed is English)
@@ -339,12 +345,136 @@ class ParticipantExtractor:
         else:
             confidence = 'low'
         
+        # ── Post-processing: prefer enrollment total over per-arm value ──
+        # In RCTs, the NLP may pick a per-arm value instead of the total.
+        # If we find a clear "total enrollment" number ≈ 2× our result, use it.
+        best_result = cls._prefer_enrollment_total(abstract, best_result, results)
+        
         return {
             'sample_size': best_result['sample_size'],
             'confidence': confidence,
             'matched_text': best_result['matched_text'],
             'method': best_result['method']
         }
+    
+    @classmethod
+    def _prefer_enrollment_total(cls, abstract: str, best: dict, all_results: list) -> dict:
+        """
+        Post-processing: if the selected result looks like a per-arm value,
+        check if the abstract mentions a total that is ~2× this value.
+        If so, return the total instead.
+        
+        Common patterns:
+          - "200 consecutive patients" where NLP picked "108 patients" (per-arm)
+          - "A total of 100 patients were randomized" where NLP picked "(n=50)"
+          - "386 patients were enrolled" where NLP picked "173 patients"
+        """
+        best_n = best.get('sample_size')
+        if not best_n or best_n < 5:
+            return best
+        
+        # Don't override if the current best is already a high-confidence enrollment total
+        # (patterns 0-9 are enrollment/total patterns with base score >= 0.88)
+        best_method = best.get('method', '')
+        if best_method.startswith('numeric_pattern_'):
+            try:
+                pat_idx = int(best_method.split('_')[-1])
+                if pat_idx <= 9:  # High-confidence enrollment patterns
+                    return best
+            except ValueError:
+                pass
+        if best_method in ('multi_arm_sum', 'enrollment_total_override'):
+            return best
+        
+        # Also skip if matched text contains strong enrollment context
+        matched_lower = best.get('matched_text', '').lower()
+        strong_enrollment = ['randomized', 'randomised', 'enrolled', 'total of',
+                             'were included', 'participated', 'were recruited']
+        if any(kw in matched_lower for kw in strong_enrollment):
+            return best
+        
+        abstract_lower = abstract.lower()
+        
+        # Only try if there's RCT context
+        rct_keywords = ['randomiz', 'randomis', 'assigned', 'allocated', 'group',
+                        'arm', 'versus', ' vs ', 'compared', 'control', 'placebo']
+        if not any(kw in abstract_lower for kw in rct_keywords):
+            return best
+        
+        # Look for a candidate total among all results
+        # A "total" is a number that is between 1.7× and 2.5× our best result
+        # (accounts for imbalances between arms and multi-arm trials with 2-3 arms)
+        target_lo = best_n * 1.7
+        target_hi = best_n * 2.5
+        
+        best_total_candidate = None
+        best_total_score = 0
+        
+        for r in all_results:
+            n = r.get('sample_size')
+            if not n or n == best_n:
+                continue
+            if target_lo <= n <= target_hi:
+                # Found a ~2× candidate — check if it's a total/enrollment count
+                method = r.get('method', '')
+                matched = r.get('matched_text', '').lower()
+                score = r.get('confidence_score', 0)
+                
+                # Boost if matched text contains total/enrollment context  
+                is_total = False
+                total_patterns = [
+                    'total', 'enrolled', 'included', 'randomized', 'randomised',
+                    'consecutive', 'underwent', 'recruited', 'participated',
+                ]
+                for tp in total_patterns:
+                    if tp in matched:
+                        is_total = True
+                        break
+                
+                # Also check the abstract context around this number
+                if not is_total:
+                    # Find position of this number in abstract
+                    n_str = str(n)
+                    idx = abstract.find(n_str)
+                    if idx >= 0:
+                        ctx = abstract[max(0, idx-60):idx+len(n_str)+60].lower()
+                        for tp in total_patterns:
+                            if tp in ctx:
+                                is_total = True
+                                break
+                
+                if is_total and (best_total_candidate is None or score > best_total_score):
+                    best_total_candidate = r
+                    best_total_score = score
+        
+        if best_total_candidate:
+            return best_total_candidate
+        
+        # Also try: if the abstract says "X patients" or "a total of X" where
+        # X ≈ 2×best and this number wasn't in our results (edge case)
+        total_enrollment_patterns = [
+            r'(?:a\s+)?total\s+of\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?|individuals?|people)',
+            r'(\d[\d,]*)\s+(?:consecutive\s+)?(?:patients?|participants?|subjects?)\s+(?:were\s+)?(?:randomized|randomised|enrolled|recruited|included)',
+            r'(?:randomized|randomised|enrolled|recruited)\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?)',
+            r'(?:study|trial)\s+(?:of|included|enrolled|with)\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?)',
+        ]
+        
+        for pat in total_enrollment_patterns:
+            for m in re.finditer(pat, abstract, re.IGNORECASE):
+                try:
+                    n = int(m.group(1).replace(',', ''))
+                except (ValueError, IndexError):
+                    continue
+                if target_lo <= n <= target_hi:
+                    return {
+                        'sample_size': n,
+                        'confidence_score': 0.92,
+                        'matched_text': m.group().strip(),
+                        'method': 'enrollment_total_override',
+                        'type': 'numeric',
+                    }
+        
+        return best
     
     @classmethod
     def _extract_number_from_match(cls, match):
@@ -365,12 +495,14 @@ class ParticipantExtractor:
     def _try_multi_arm_summation(cls, abstract: str) -> dict | None:
         """
         Detect multi-arm RCT patterns like "(n = 528) or (n = 528)" and sum arms.
+        Also handles "(group_name; n=X)" and "(group_name, n = X)" patterns.
         Only used when no explicit total is stated nearby.
         Returns a result dict or None.
         """
-        # Find all (n = X) or [n = X] patterns
+        # Find all (n = X), [n = X], (group; n=X), (group, n = X) patterns
+        # The key requirement is that n=X appears inside brackets
         arm_matches = list(re.finditer(
-            r'[\(\[]\s*[Nn]\s*=\s*(\d[\d,]*)\s*[\)\]]',
+            r'[\(\[](?:[^)\]]*?[,;]\s*)?[Nn][\s\u2009\u00a0]*=[\s\u2009\u00a0]*(\d[\d,]*)\s*[\)\]]',
             abstract
         ))
         if len(arm_matches) < 2:
@@ -476,6 +608,8 @@ class ParticipantExtractor:
                 34: 0.55, # patients: N = 123
                 35: 0.50, # (N = 123)
                 36: 0.50, # [N = 123]
+                37: 0.88, # "N were randomized" (no patient noun)
+                38: 0.85, # "N total participants"
             }
             score += base_scores.get(pattern_index, 0.6)
         else:  # written
