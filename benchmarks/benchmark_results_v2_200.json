@@ -1,9 +1,9 @@
 {
   "meta": {
-    "date": "2026-02-27T14:51:18.051096",
+    "date": "2026-02-27T15:57:15.487378",
     "article_count": 200,
     "query": "surgery OR chemotherapy OR clinical trial",
-    "duration_sec": 36.0,
+    "duration_sec": 43.5,
     "dictionaries": {
       "COUNTRY_TO_REGION": 226,
       "TLD_TO_COUNTRY": 198,
@@ -11,50 +11,15 @@
     }
   },
   "participant_extractor": {
-    "mae": 175.9,
-    "precision": 69.7,
-    "recall": 98.7,
-    "f1": 81.7,
-    "evaluated": 109,
-    "tp": 76,
-    "fp": 33,
+    "mae": 16.2,
+    "precision": 86.6,
+    "recall": 99.0,
+    "f1": 92.4,
+    "evaluated": 112,
+    "tp": 97,
+    "fp": 15,
     "fn": 1,
     "worst_errors": [
-      {
-        "pmid": "24068158",
-        "gs": 80,
-        "pred": 6148,
-        "error": 6068,
-        "snippet": "To date, no study has defined the consequences of radial artery harvest based on a large number of patients in a prospec"
-      },
-      {
-        "pmid": "27687471",
-        "gs": 4908,
-        "pred": 834,
-        "error": 4074,
-        "snippet": "Despite substantial prevention efforts, surgical site infections (SSIs) remain the most common health care-associated in"
-      },
-      {
-        "pmid": "39969869",
-        "gs": 3971,
-        "pred": 217,
-        "error": 3754,
-        "snippet": "Reports on long-term outcomes from randomized clinical trials comparing laparoscopic sleeve gastrectomy (SG) and Roux-en"
-      },
-      {
-        "pmid": "33439221",
-        "gs": 1645,
-        "pred": 289,
-        "error": 1356,
-        "snippet": "Postdischarge video-based virtual visits are a growing aspect of surgical care and have dramatically increased in the se"
-      },
-      {
-        "pmid": "34668963",
-        "gs": 528,
-        "pred": 1039,
-        "error": 511,
-        "snippet": "It is not clear whether laparoscopic and open distal gastrectomy produce similar outcomes among patients with locally ad"
-      },
       {
         "pmid": "33760010",
         "gs": 481,
@@ -63,25 +28,11 @@
         "snippet": "Despite the widespread use of systemic antibiotics to prevent infections in surgically treated patients with fracture, h"
       },
       {
-        "pmid": "38381428",
-        "gs": 292,
-        "pred": 689,
-        "error": 397,
-        "snippet": "Surgical site infections frequently occur after open abdominal surgery. Intraoperative wound irrigation as a preventive "
-      },
-      {
-        "pmid": "31968063",
-        "gs": 418,
-        "pred": 110,
-        "error": 308,
-        "snippet": "Research supports use of prehabilitation to optimize physical status before and after colorectal cancer resection, but i"
-      },
-      {
-        "pmid": "38630471",
-        "gs": 301,
-        "pred": 599,
-        "error": 298,
-        "snippet": "Current short-term evidence has shown that uncomplicated acute appendicitis can be treated successfully with oral antibi"
+        "pmid": "27851857",
+        "gs": 270,
+        "pred": 541,
+        "error": 271,
+        "snippet": "Eravacycline is a novel, fully synthetic fluorocycline antibiotic of the tetracycline class with in vitro activity again"
       },
       {
         "pmid": "25442065",
@@ -89,69 +40,83 @@
         "pred": 250,
         "error": 224,
         "snippet": "In the American College of Surgeons National Surgical Quality Improvement Program (ACS NSQIP), pancreatic fistula has no"
+      },
+      {
+        "pmid": "34985503",
+        "gs": 153,
+        "pred": 293,
+        "error": 140,
+        "snippet": "Ischemic cold storage (ICS) of livers for transplant is associated with serious posttransplant complications and underus"
+      },
+      {
+        "pmid": "32459322",
+        "gs": 371,
+        "pred": 248,
+        "error": 123,
+        "snippet": "Morbidity is still high in pancreatic surgery, driven mainly by gastrointestinal complications such as pancreatic fistul"
+      },
+      {
+        "pmid": "33295955",
+        "gs": 121,
+        "pred": 240,
+        "error": 119,
+        "snippet": "Laparoscopic sleeve gastrectomy (LSG) is currently the predominant bariatric procedure, although long-term weight loss a"
+      },
+      {
+        "pmid": "36857058",
+        "gs": 193,
+        "pred": 91,
+        "error": 102,
+        "snippet": "There is a need for a new, less invasive breast reconstruction option for patients who undergo mastectomy in their breas"
+      },
+      {
+        "pmid": "34787647",
+        "gs": 201,
+        "pred": 103,
+        "error": 98,
+        "snippet": "Inhaled nitric oxide (iNO) is commonly administered for selectively inhaled pulmonary vasodilation and prevention of oxi"
+      },
+      {
+        "pmid": "31562911",
+        "gs": 67,
+        "pred": 135,
+        "error": 68,
+        "snippet": "We investigated the utility and safety of short-course oral probiotics among patients undergoing major abdominal operati"
+      },
+      {
+        "pmid": "17661241",
+        "gs": 72,
+        "pred": 19,
+        "error": 53,
+        "snippet": "Both endoscopic obturation and transjugular intrahepatic portosystemic shunts (TIPSs) have proven to be effective in pre"
       }
     ]
   },
   "outcome_extractor": {
-    "precision": 95.3,
-    "recall": 94.4,
-    "f1": 94.8,
-    "tp": 101,
-    "fp": 5,
-    "fn": 6,
-    "tn": 88,
+    "precision": 98.2,
+    "recall": 99.1,
+    "f1": 98.7,
+    "tp": 111,
+    "fp": 2,
+    "fn": 1,
+    "tn": 86,
     "total": 200,
     "false_positives": [
-      {
-        "pmid": "34985503",
-        "prediction": "incidence of EAD the number of liver graft-related severe adverse events within 30 days after transplant",
-        "snippet": "Ischemic cold storage (ICS) of livers for transplant is associated with serious posttransplant complications and underuse of liver allografts.\nTo determine whether portable normothermic machine perfus"
-      },
       {
         "pmid": "39167382",
         "prediction": "The primary, noninferiority end point was proportion of patients who were pain free as evaluated by Izbicki pain score at the 5-year follow-up.",
         "snippet": "The 1-year results of the SECURE trial, a randomized trial comparing a restrictive strategy vs usual care for select patients with symptomatic cholelithiasis for cholecystectomy, resulted in a signifi"
       },
       {
-        "pmid": "35442430",
-        "prediction": "The main outcome was dysphagia scores for solid and liquid food items after more than 15 years.",
-        "snippet": "The efficacy of fundoplication operations in the management of gastroesophageal reflux disease (GERD) has been documented. However, few prospective, controlled series report long-term (>10 years) effi"
-      },
-      {
-        "pmid": "15383800",
-        "prediction": "The primary efficacy end point was a composite of time to recovery of upper and lower GI function.",
-        "snippet": "To demonstrate that alvimopan (6 or 12 mg) accelerates recovery of gastrointestinal (GI) function in patients undergoing laparotomy for bowel resection or radical hysterectomy.\nPostoperative ileus (PO"
-      },
-      {
-        "pmid": "26465781",
-        "prediction": "The primary study endpoint was disease-free survival.",
-        "snippet": "The optimal time to initiate adjuvant chemotherapy after surgery in patients with colon cancer is not clear. We investigated the benefit of combined intraportal chemotherapy administered during radica"
+        "pmid": "34009291",
+        "prediction": "Key secondary outcomes were centrally assessed rates of objective radiologic and major pathologic response of CPM to neoadjuvant treatment.",
+        "snippet": "To date, no randomized clinical trials have investigated perioperative systemic therapy relative to cytoreductive surgery and hyperthermic intraperitoneal chemotherapy (CRS-HIPEC) alone for resectable"
       }
     ],
     "false_negatives": [
       {
-        "pmid": "38837150",
-        "snippet": "Recovery of shoulder function following breast cancer surgery is crucial for physical functioning and quality of life. While early implementation of shoulder rehabilitation exercises may enhance recov"
-      },
-      {
-        "pmid": "40235447",
-        "snippet": "This randomized phase II/III study evaluated the superiority of neoadjuvant therapy with gemcitabine plus S-1 over upfront surgery for patients with resectable pancreatic ductal adenocarcinoma (PDAC)."
-      },
-      {
-        "pmid": "26141466",
-        "snippet": "Daikenchuto (DKT) has widely been used to improve abdominal symptoms by being expected to accelerate bowel motility. The purpose of this study is to examine the efficacy and safety of DKT for preventi"
-      },
-      {
-        "pmid": "17254923",
-        "snippet": "Surgical teams have not had a routine, reliable measure of patient condition at the end of an operation. We aimed to develop an Apgar score for the field of surgery, an outcomes score that teams could"
-      },
-      {
-        "pmid": "24899268",
-        "snippet": "Many questions remain unanswered about the role of bariatric surgery for people with type 2 diabetes mellitus (T2DM).\nTo determine feasibility of a randomized clinical trial (RCT) and compare initial "
-      },
-      {
-        "pmid": "33595631",
-        "snippet": "Available data comparing the long-term results of hybrid minimally invasive esophagectomy (HMIE) with that of open esophagectomy are conflicting, with similar or even better results reported for the m"
+        "pmid": "41060640",
+        "snippet": "The DIPLOMA trial showed comparable radical resection rates after minimally invasive left pancreatectomy (MILP) and open left pancreatectomy (OLP) in patients with upfront resectable pancreatic cancer"
       }
     ]
   },

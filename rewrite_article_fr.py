@@ -9,8 +9,8 @@ from docx import Document
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
-BAK = r'C:\Users\kjjdfianko\Documents\APPLICATION\med_search_app\Medsearch note.docx.bak'
-DST = r'C:\Users\kjjdfianko\Documents\APPLICATION\med_search_app\Medsearch note.docx'
+BAK = r'C:\Users\kjjdfianko\Documents\APPLICATION\med_search_app\docs\Medsearch note.docx.bak'
+DST = r'C:\Users\kjjdfianko\Documents\APPLICATION\med_search_app\docs\Medsearch note.docx'
 
 # --- Charger le backup (document original) pour extraire tables + images --------
 src = Document(BAK)

@@ -1,9 +1,9 @@
 {
   "meta": {
-    "date": "2026-02-27T14:50:30.832173",
+    "date": "2026-02-27T15:28:42.167627",
     "article_count": 93,
     "query": "liver resection OR hepatectomy",
-    "duration_sec": 22.4,
+    "duration_sec": 16.5,
     "dictionaries": {
       "COUNTRY_TO_REGION": 226,
       "TLD_TO_COUNTRY": 198,
@@ -12,27 +12,27 @@
   },
   "participant_extractor": {
     "mae": 14.9,
-    "precision": 70.4,
+    "precision": 78.2,
     "recall": 100.0,
-    "f1": 82.6,
-    "evaluated": 54,
-    "tp": 38,
-    "fp": 16,
+    "f1": 87.8,
+    "evaluated": 55,
+    "tp": 43,
+    "fp": 12,
     "fn": 0,
     "worst_errors": [
       {
-        "pmid": "26776356",
-        "gs": 114,
-        "pred": 224,
-        "error": 110,
-        "snippet": "Local hemostatic agents are important for the control of bleeding during liver resection when standard surgical techniqu"
+        "pmid": "33064385",
+        "gs": 400,
+        "pred": 199,
+        "error": 201,
+        "snippet": "To assess the clinical impact of a no-drain policy after hepatic resection.\nPrevious randomized controlled trials addres"
       },
       {
-        "pmid": "21233606",
-        "gs": 105,
-        "pred": 210,
-        "error": 105,
-        "snippet": "We performed a randomized controlled trial to investigate the clinical benefits of perioperative treatment with steroids"
+        "pmid": "26776356",
+        "gs": 224,
+        "pred": 92,
+        "error": 132,
+        "snippet": "Local hemostatic agents are important for the control of bleeding during liver resection when standard surgical techniqu"
       },
       {
         "pmid": "29462005",
@@ -42,11 +42,25 @@
         "snippet": "This study was performed to determine whether neoadjuvant treatment increases survival in patients with BRPC.\nDespite ma"
       },
       {
-        "pmid": "17197963",
-        "gs": 84,
-        "pred": 169,
-        "error": 85,
-        "snippet": "To compare the efficacy and safety of partial hepatectomy aiming grossly at a narrow (1 cm) and a wide (2 cm) resection "
+        "pmid": "31356262",
+        "gs": 148,
+        "pred": 75,
+        "error": 73,
+        "snippet": "This study aimed to assess the effects of remote ischemic preconditioning (RIPC) on liver function in donors and recipie"
+      },
+      {
+        "pmid": "32049675",
+        "gs": 28,
+        "pred": 100,
+        "error": 72,
+        "snippet": "To evaluate the oncological outcome for patients with colorectal liver metastases (CRLM) randomized to associating liver"
+      },
+      {
+        "pmid": "9065296",
+        "gs": 63,
+        "pred": 123,
+        "error": 60,
+        "snippet": "The aim of this prospective study was to evaluate the applicability of cryogenic and conventional surgery in treating li"
       },
       {
         "pmid": "10065817",
@@ -56,13 +70,6 @@
         "snippet": "Omentoplasty (OP) is thought to fill residual cavity, to assist healing of raw surfaces, and to promote resorption of se"
       },
       {
-        "pmid": "19212170",
-        "gs": 52,
-        "pred": 108,
-        "error": 56,
-        "snippet": "To evaluate the effect of preoperative transarterial chemoembolization (TACE) for resectable large hepatocellular carcin"
-      },
-      {
         "pmid": "9409569",
         "gs": 50,
         "pred": 100,
@@ -70,25 +77,18 @@
         "snippet": "To evaluate whether vascular inflow occlusion by the Pringle maneuver during hepatectomy can be safe and effective in re"
       },
       {
-        "pmid": "10077049",
-        "gs": 42,
-        "pred": 86,
-        "error": 44,
-        "snippet": "The authors compared the intra- and postoperative course of patients undergoing liver resections under continuous pedicu"
+        "pmid": "23426344",
+        "gs": 54,
+        "pred": 30,
+        "error": 24,
+        "snippet": "To assess by prospective randomized controlled trial the feasibility and efficacy of using a bioresorbable hyaluronic ac"
       },
       {
-        "pmid": "8257225",
-        "gs": 39,
-        "pred": 81,
-        "error": 42,
-        "snippet": "This prospective randomized study determined the influence of closed-suction drainage on the incidence of postoperative "
-      },
-      {
-        "pmid": "9065296",
-        "gs": 63,
-        "pred": 29,
-        "error": 34,
-        "snippet": "The aim of this prospective study was to evaluate the applicability of cryogenic and conventional surgery in treating li"
+        "pmid": "40864449",
+        "gs": 70,
+        "pred": 52,
+        "error": 18,
+        "snippet": "Sarcopenia is an emerging predictor of complications after liver surgery. Strategies to mitigate its impact are crucial "
       }
     ]
   },
