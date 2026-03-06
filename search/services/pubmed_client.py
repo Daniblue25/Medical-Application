@@ -158,13 +158,22 @@ def _request(endpoint: str, params: Dict[str, str]) -> Response:
 def _build_query(term: str, study_type: str = "", journal_filter: str = "") -> str:
     query_parts = []
     
-    # If term contains boolean operators (OR, AND), search in title OR abstract
+    # Preprocess term: convert semicolons to AND operators
+    if term:
+        # Split by semicolons, strip whitespace, filter empty parts
+        parts = [p.strip() for p in term.split(';') if p.strip()]
+        if len(parts) > 1:
+            # Multiple terms separated by semicolons -> combine with AND
+            term = ' AND '.join(parts)
+    
+    # Build comprehensive search: Title/Abstract, MeSH Terms, and Author Keywords
+    # [Other Term] captures Author Keywords in PubMed
     if term and ("OR" in term or "AND" in term):
-        # Search in title OR abstract for surgical keywords
-        query_parts.append(f"({term}[Title/Abstract])")
+        # For complex queries with boolean operators
+        query_parts.append(f"(({term}[Title/Abstract]) OR ({term}[MeSH Terms]) OR ({term}[Other Term]))")
     elif term:
-        # Simple search in title OR abstract
-        query_parts.append(f"{term}[Title/Abstract]")
+        # Simple search across all relevant fields
+        query_parts.append(f"(({term}[Title/Abstract]) OR ({term}[MeSH Terms]) OR ({term}[Other Term]))")
     # Note: if term is empty and journal_filter is set, we'll search ALL articles from those journals
     
     # Handle multiple study types (list or comma-separated string)
@@ -316,7 +325,7 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
         country = last_author_country
         region = last_author_region
 
-        doi = None
+        doi = ''
         for id_node in node.findall("PubmedData/ArticleIdList/ArticleId"):
             if id_node.attrib.get("IdType") == "doi":
                 doi = (id_node.text or "").strip()
