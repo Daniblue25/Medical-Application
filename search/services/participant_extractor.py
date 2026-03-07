@@ -3,6 +3,58 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _normalize_number_str(s: str) -> str:
+    """
+    Normalize number string by removing thousand separators (comma, dot, space).
+    
+    Handles:
+    - English format: 1,505 → 1505
+    - European format: 1.505 → 1505 (dot as thousand separator)
+    - Space separator: 1 505 → 1505
+    
+    Logic: A dot followed by exactly 3 digits is a thousand separator, not decimal.
+    Examples:
+        "1.505" → "1505" (1,505 patients in European format)
+        "1.5" → "1" (1.5 is decimal, take integer part)
+        "1,234,567" → "1234567"
+        "1.234.567" → "1234567"
+    """
+    if not s:
+        return s
+    
+    # Remove spaces (thousand separators in some locales)
+    s = s.replace(' ', '')
+    
+    # Remove commas (English thousand separator)
+    s = s.replace(',', '')
+    
+    # Handle dots: if followed by exactly 3 digits, it's a thousand separator
+    # Otherwise (1-2 digits or end), it's a decimal point - truncate after it
+    result = []
+    i = 0
+    while i < len(s):
+        if s[i] == '.':
+            # Count digits after the dot
+            j = i + 1
+            while j < len(s) and s[j].isdigit():
+                j += 1
+            digits_after = j - i - 1
+            
+            if digits_after == 3:
+                # Thousand separator - skip the dot, keep the digits
+                i += 1
+                continue
+            else:
+                # Decimal point - stop here (truncate decimal part)
+                break
+        else:
+            result.append(s[i])
+        i += 1
+    
+    return ''.join(result)
+
+
 class ParticipantExtractor:
     """Extract participant/patient count from PubMed abstracts"""
     
@@ -30,121 +82,121 @@ class ParticipantExtractor:
     
     # Patterns pour détecter les nombres en chiffres
     # Ordre important: les patterns les plus spécifiques et prioritaires en premier
-    # Note: (?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}) captures numbers with separators (34,684) or without (9843)
+    # Note: (?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}) captures numbers with separators (34,684) or without (9843)
     NUMERIC_PATTERNS = [
         # ── ULTRA-PRIORITY: Screening→Enrollment funnels ──
         # "screened 6148 patients, of whom 751 were included/enrolled"
-        r'(?:screened|assessed)\s+(?:\d[\d,\s]*)\s+\w+[^.]*?(?:of\s+(?:whom|these|which|them))\s*,?\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:\w+\s+)?(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised|eligible)',
+        r'(?:screened|assessed)\s+(?:\d[\d,\s]*)\s+\w+[^.]*?(?:of\s+(?:whom|these|which|them))\s*,?\s*((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:\w+\s+)?(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised|eligible)',
         
         # "6148 were screened... 751 were included/enrolled" (separate clause)
-        r'(?:\d[\d,\s]*)\s+(?:were\s+)?(?:screened|assessed)[^.]*?(?:and\s+)?((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised)',
+        r'(?:\d[\d,\s]*)\s+(?:were\s+)?(?:screened|assessed)[^.]*?(?:and\s+)?((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised)',
         
         # "total of 3971 patients were assessed, and 217 patients were enrolled"
-        r'(?:total\s+of\s+)?\d[\d,\s]*\s+(?:patients?|participants?|subjects?)\s+(?:[\w\s]*?)(?:were\s+)?(?:screened|assessed)[^.]*?(?:and\s+)?((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:patients?\s+)?(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised)',
+        r'(?:total\s+of\s+)?\d[\d,\s]*\s+(?:patients?|participants?|subjects?)\s+(?:[\w\s]*?)(?:were\s+)?(?:screened|assessed)[^.]*?(?:and\s+)?((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:patients?\s+)?(?:were\s+)?(?:included|enrolled|recruited|randomized|randomised)',
         
         # "screened X patients and enrolled Y patients" (verb-first, same sentence)
-        r'(?:screened|assessed)\s+\d[\d,]*\s+(?:patients?|participants?|subjects?)[^.]*?enrolled\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:patients?|participants?|subjects?)',
+        r'(?:screened|assessed)\s+\d[\d,]*\s+(?:patients?|participants?|subjects?)[^.]*?enrolled\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:patients?|participants?|subjects?)',
         
         # "screened 500 patients. Of these, 200 were excluded and 300 were enrolled" (cross-sentence)
-        r'(?:screened|assessed)\s+\d[\d,]*\s+(?:patients?|participants?|subjects?)[^.]*\.\s*(?:Of\s+(?:these|them|whom)[^.]*?)((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:were\s+)?(?:enrolled|included|recruited|randomized)',
+        r'(?:screened|assessed)\s+\d[\d,]*\s+(?:patients?|participants?|subjects?)[^.]*\.\s*(?:Of\s+(?:these|them|whom)[^.]*?)((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:were\s+)?(?:enrolled|included|recruited|randomized)',
         
         # ── PRIORITAIRES: Déclarations principales (début d'abstract) ──
         # "In total, 119 individuals participated"
-        r'(?:in\s+)?total[,\s]+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|enrolled|were\s+included|were\s+recruited)',
+        r'(?:in\s+)?total[,.\\s]+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|enrolled|were\s+included|were\s+recruited)',
         
         # "119 participants were enrolled/included/recruited"
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|were\s+enrolled|were\s+included|were\s+recruited|were\s+randomized|were\s+randomised)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)\s+(?:participated|were\s+enrolled|were\s+included|were\s+recruited|were\s+randomized|were\s+randomised)',
         
         # "A total of 119 participants"
-        r'total\s+of\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        r'total\s+of\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
         
         # "The study included 119 participants"
-        r'(?:study|trial|analysis)\s+(?:included|enrolled|recruited)\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
+        r'(?:study|trial|analysis)\s+(?:included|enrolled|recruited)\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?|individuals?|cases?)',
         
         # "planned enrollment is 700 participants" / "enrollment of 700 patients"
-        r'(?:planned\s+)?enrollment\s+(?:is|was|of)\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
+        r'(?:planned\s+)?enrollment\s+(?:is|was|of)\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
         
         # "will enroll 700 participants" / "to enroll 700 patients"
-        r'(?:will|to)\s+enroll\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
+        r'(?:will|to)\s+enroll\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
         
         # "enrolling 700 participants"
-        r'enrolling\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
+        r'enrolling\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:adult\s+)?(?:participants?|patients?|subjects?|individuals?)',
         
         # "119 patients" / "612 burned children" / "100 deceased donors" (broad match)
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:(?:consecutive|eligible|enrolled|study|deceased|obese|adult|pediatric|surgical|hospitalized|burned|selected|total|medical)\s+)*(?:participants?|patients?|subjects?|individuals?|cases?|children|neonates?|infants?|donors?|adults?|women|men|volunteers?|students?)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:(?:consecutive|eligible|enrolled|study|deceased|obese|adult|pediatric|surgical|hospitalized|burned|selected|total|medical)\s+)*(?:participants?|patients?|subjects?|individuals?|cases?|children|neonates?|infants?|donors?|adults?|women|men|volunteers?|students?)',
         
         # SECONDAIRES: Formats avec N = (souvent sous-groupes)
         # Sample size patterns
-        r'sample\s+size\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))',
-        r'enrolled\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'sample\s+size\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))',
+        r'enrolled\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # Study population
-        r'study\s+population\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))',
-        r'cohort\s+of\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'study\s+population\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))',
+        r'cohort\s+of\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # Pattern N = (peut être un sous-groupe, donc moins prioritaire)
-        r'[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))',
+        r'[Nn]\s*=\s*((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))',
         
         # "enrolled 53 eyes" / "enrolled 130 adults" / "enrolled 10 pediatric patients"
-        r'enrolled\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:eyes?|adults?|children|pediatric\s+patients?|healthy\s+(?:adults?|volunteers?))',
+        r'enrolled\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:eyes?|adults?|children|pediatric\s+patients?|healthy\s+(?:adults?|volunteers?))',
         
         # "randomized 1:1" - capture le contexte de randomisation
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?)\s+(?:were\s+)?randomized\s+(?:1\s*:\s*1|in\s+a\s+1\s*:\s*1)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?)\s+(?:were\s+)?randomized\s+(?:1\s*:\s*1|in\s+a\s+1\s*:\s*1)',
         
         # "randomly assigned 100 patients"
-        r'randomly\s+assigned\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'randomly\s+assigned\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "recruited 100 patients from..."
-        r'recruited\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'recruited\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "comprising 100 patients"
-        r'comprising\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'comprising\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "involved 100 patients"
-        r'involved\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'involved\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "conducted on 100 patients"
-        r'conducted\s+(?:on|in|with)\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'conducted\s+(?:on|in|with)\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "analyzed 100 patients" / "analysis of 100 patients"
-        r'analy[sz](?:ed|is)\s+(?:of\s+)?((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'analy[sz](?:ed|is)\s+(?:of\s+)?((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "completed by 100 participants"
-        r'completed\s+by\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'completed\s+by\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "data from 100 patients"
-        r'data\s+from\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'data\s+from\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "100 eligible patients"
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+eligible\s+(?:participants?|patients?|subjects?)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+eligible\s+(?:participants?|patients?|subjects?)',
         
         # "100 consecutive patients"
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+consecutive\s+(?:participants?|patients?|subjects?)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+consecutive\s+(?:participants?|patients?|subjects?)',
         
         # "screened 200 patients" / "100 were screened"
-        r'screened\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'screened\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "100 evaluable patients"
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+evaluable\s+(?:participants?|patients?|subjects?)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+evaluable\s+(?:participants?|patients?|subjects?)',
         
         # "assigned 50 to... and 50 to..." (capture le premier groupe)
-        r'assigned\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'assigned\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # "among 100 patients"
-        r'among\s+((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
+        r'among\s+((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+(?:participants?|patients?|subjects?)',
         
         # Participants/patients avec format variable
-        r'(?:participants?|patients?|subjects?|individuals?|cases?)\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))',
+        r'(?:participants?|patients?|subjects?|individuals?|cases?)\s*[:\(]?\s*[Nn]?\s*=?\s*((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))',
         
         # Entre parenthèses ou crochets (souvent précisions, donc basse priorité)
-        r'\([\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))[\s\w]*\)',
-        r'\[[\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))[\s\w]*\]',
+        r'\([\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))[\s\w]*\)',
+        r'\[[\s\w]*[Nn]\s*=\s*((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))[\s\w]*\]',
 
         # "310 were randomized" / "120 were randomly assigned" (no patient noun)
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+were\s+(?:randomly\s+)?(?:randomized|randomised|assigned|allocated|enrolled|included|recruited)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+were\s+(?:randomly\s+)?(?:randomized|randomised|assigned|allocated|enrolled|included|recruited)',
 
         # "7775 total participants" (number before "total")
-        r'((?:\d{1,3}(?:[,\s]\d{3})+|\d{1,6}))\s+total\s+(?:participants?|patients?|subjects?)',
+        r'((?:\d{1,3}(?:[,.\\s]\d{3})+|\d{1,6}))\s+total\s+(?:participants?|patients?|subjects?)',
     ]
     
     # Reusable sub-patterns for written numbers (English only, PubMed is English)
@@ -455,14 +507,14 @@ class ParticipantExtractor:
         total_enrollment_patterns = [
             r'(?:a\s+)?total\s+of\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?|individuals?|people)',
             r'(\d[\d,]*)\s+(?:consecutive\s+)?(?:patients?|participants?|subjects?)\s+(?:were\s+)?(?:randomized|randomised|enrolled|recruited|included)',
-            r'(?:randomized|randomised|enrolled|recruited)\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?)',
-            r'(?:study|trial)\s+(?:of|included|enrolled|with)\s+(\d[\d,]*)\s+(?:patients?|participants?|subjects?)',
+            r'(?:randomized|randomised|enrolled|recruited)\s+(\d[\d,.]*?)\s+(?:patients?|participants?|subjects?)',
+            r'(?:study|trial)\s+(?:of|included|enrolled|with)\s+(\d[\d,.]*?)\s+(?:patients?|participants?|subjects?)',
         ]
         
         for pat in total_enrollment_patterns:
             for m in re.finditer(pat, abstract, re.IGNORECASE):
                 try:
-                    n = int(m.group(1).replace(',', ''))
+                    n = int(_normalize_number_str(m.group(1)))
                 except (ValueError, IndexError):
                     continue
                 if target_lo <= n <= target_hi:
@@ -478,13 +530,13 @@ class ParticipantExtractor:
     
     @classmethod
     def _extract_number_from_match(cls, match):
-        """Extrait le nombre d'un match regex, gère les séparateurs de milliers (virgule, espace)"""
+        """Extrait le nombre d'un match regex, gère les séparateurs de milliers (virgule, point, espace)"""
         for group_num in range(1, match.lastindex + 1 if match.lastindex else 1):
             try:
                 group_text = match.group(group_num)
                 if group_text:
-                    # Supprimer les séparateurs de milliers (virgule et espace)
-                    cleaned = group_text.replace(',', '').replace(' ', '')
+                    # Normalize thousand separators (comma, dot, space)
+                    cleaned = _normalize_number_str(group_text)
                     if cleaned.isdigit():
                         return int(cleaned)
             except:
@@ -534,7 +586,7 @@ class ParticipantExtractor:
                 return None  # explicit total exists, don't sum
             
             # Sum all consecutive arms
-            n1 = int(m1.group(1).replace(',', ''))
+            n1 = int(_normalize_number_str(m1.group(1)))
             total = n1
             matched_parts = [m1.group()]
             
@@ -542,7 +594,7 @@ class ParticipantExtractor:
                 mj = arm_matches[j]
                 if mj.start() - arm_matches[j - 1].end() > 200:
                     break
-                nj = int(mj.group(1).replace(',', ''))
+                nj = int(_normalize_number_str(mj.group(1)))
                 total += nj
                 matched_parts.append(mj.group())
             
