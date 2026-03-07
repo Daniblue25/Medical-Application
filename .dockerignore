@@ -1,0 +1,79 @@
+# =============================================================================
+# .dockerignore - Exclude unnecessary files from Docker build context
+# =============================================================================
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+*.spec
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker (avoid recursive copy)
+docker/docker-compose*.yml
+docker/deploy-*.ps1
+docker/deploy-*.sh
+docker/README.md
+docker/.env*
+
+# Database (don't ship local DB)
+db.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Tests & Benchmarks (not needed in production image)
+benchmarks/
+pytest.ini
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Documentation
+docs/
+*.md
+LICENSE
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Distribution / build scripts
+distribution/
+build_multiplatform.py
+MedicalSearch.spec
+launcher.py
+rewrite_article_fr.py
+
+# Node / Tailwind (CSS is pre-built in static/)
+node_modules/
+tailwind.config.js
+tailwindcss.exe
+package*.json
+
+# Env files
+.env
+.env.*
+
+# Temp files (Word, etc.)
+~$*
+*.tmp
