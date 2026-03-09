@@ -343,6 +343,13 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
             if medline is not None
             else []
         )
+        
+        # Extraire la langue de l'article
+        language = ""
+        if article_node is not None:
+            lang_node = article_node.find("Language")
+            if lang_node is not None and lang_node.text:
+                language = lang_node.text.strip()  # e.g. "eng", "fre", "ger", "spa"
 
         # Extraire le nombre de participants avec Regex v2.0 (rapide)
         # Note: LLM disponible via llm_extractor.py mais trop lent pour recherches temps réel
@@ -375,6 +382,7 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "affiliation": last_author_affiliation,  # Primary affiliation (last author)
                 "first_author_affiliation": first_author_affiliation,  # First author affiliation
                 "last_author_affiliation": last_author_affiliation,  # Last author affiliation
+                "language": language,  # Article language (eng, fre, ger, spa, etc.)
                 "keywords": keywords,  # Real Keywords from KeywordList
                 "mesh_terms": mesh_terms,
                 "citations": None,

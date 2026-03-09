@@ -335,7 +335,10 @@
                 <div>
                     <h3 class="text-xl font-bold text-gray-900" id="modalTitle">Article Title</h3>
                     <p class="text-sm text-gray-500 mt-1" id="modalAuthors">Authors</p>
-                    <p class="text-sm text-gray-500" id="modalJournal">Journal, Year</p>
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm text-gray-500" id="modalJournal">Journal, Year</p>
+                        <span id="modalLanguage" class="hidden"></span>
+                    </div>
                 </div>
                 <button id="closeModal" class="text-gray-400 hover:text-gray-500" aria-label="Close">×</button>
             </div>
@@ -620,6 +623,45 @@ function getRegionName(regionCode) {
     return regionNames[regionCode] || 'Global';
 }
 
+function getLanguageLabel(langCode) {
+    if (!langCode) return null;
+    const code = langCode.toLowerCase();
+    const langs = {
+        'eng': null,       // Don't show badge for English (default)
+        'fre': 'FR',
+        'ger': 'DE',
+        'spa': 'ES',
+        'ita': 'IT',
+        'por': 'PT',
+        'chi': 'ZH',
+        'jpn': 'JA',
+        'kor': 'KO',
+        'rus': 'RU',
+        'ara': 'AR',
+        'tur': 'TR',
+        'pol': 'PL',
+        'dut': 'NL',
+        'dan': 'DA',
+        'swe': 'SV',
+        'nor': 'NO',
+        'fin': 'FI',
+        'cze': 'CS',
+        'hun': 'HU',
+        'rum': 'RO',
+        'gre': 'EL',
+        'heb': 'HE',
+        'per': 'FA',
+        'tha': 'TH',
+        'ukr': 'UK',
+        'hrv': 'HR',
+        'srp': 'SR',
+        'bul': 'BG',
+        'slo': 'SK',
+        'cat': 'CA',
+    };
+    return langs.hasOwnProperty(code) ? langs[code] : code.toUpperCase();
+}
+
 function toggleEmptyState(hasResults) {
     elements.emptyState?.classList.toggle('hidden', hasResults);
     elements.resultsContainer?.classList.toggle('hidden', !hasResults);
@@ -841,6 +883,7 @@ function renderResults(data) {
                     <div class="flex flex-wrap gap-2 text-xs">
                         <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1"><i class="fas fa-calendar-alt text-gray-400"></i><span>${article.year || 'N/A'}</span></span>
                         <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 flex items-center gap-1"><i class="fas fa-flask"></i><span>${article.study_type || 'Unknown type'}</span></span>
+                        ${(() => { const lang = getLanguageLabel(article.language); return lang ? `<span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 flex items-center gap-1" title="Article language: ${article.language}"><i class="fas fa-language"></i><span>${lang}</span></span>` : ''; })()}
                         <span class="saved-badge px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 hidden">Saved</span>
                         ${article.has_outcomes ? `<span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 flex items-center gap-1" title="Primary outcome automatically extracted"><i class="fas fa-bullseye"></i><span>Outcome extracted</span></span>` : ''}
                     </div>
@@ -918,6 +961,18 @@ function showArticleModal(article) {
     document.getElementById('modalTitle').textContent = article.title || 'Untitled study';
     document.getElementById('modalAuthors').textContent = article.authors || 'Unknown authors';
     document.getElementById('modalJournal').textContent = `${article.journal || 'Unknown journal'}, ${article.year || '—'}`;
+    // Language badge in modal
+    const modalLangEl = document.getElementById('modalLanguage');
+    if (modalLangEl) {
+        const lang = getLanguageLabel(article.language);
+        if (lang) {
+            modalLangEl.innerHTML = `<span class="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium"><i class="fas fa-language mr-1"></i>${lang}</span>`;
+            modalLangEl.classList.remove('hidden');
+        } else {
+            modalLangEl.innerHTML = '';
+            modalLangEl.classList.add('hidden');
+        }
+    }
     // Abstract is set later with highlighting
     document.getElementById('modalStudyType').textContent = article.study_type || '—';
     // Detailed display in modal

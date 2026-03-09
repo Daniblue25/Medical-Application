@@ -68,6 +68,7 @@ class CachedArticle(models.Model):
     quality = models.CharField(max_length=10, blank=True)
     participants = models.TextField(blank=True)
     outcomes = models.TextField(blank=True)
+    language = models.CharField(max_length=10, blank=True, default='')  # e.g. eng, fre, ger, spa
     
     # Métadonnées
     added_at = models.DateTimeField(auto_now_add=True)
@@ -94,7 +95,8 @@ class CachedArticle(models.Model):
             'region': self.region,
             'quality': self.quality,
             'participants': self.participants,
-            'outcomes': self.outcomes
+            'outcomes': self.outcomes,
+            'language': self.language,
         }
     
     def __str__(self):

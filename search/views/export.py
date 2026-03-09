@@ -73,8 +73,8 @@ def export_excel(request):
     ws = wb.active
     if ws:
         ws.title = 'Search Results'
-        # Columns: PMID / Title / Link / Year / Journal / Rank / Sample Size / Primary Outcome / Keywords / First Author Country / Last Author Country / Region
-        headers = ['PMID', 'Titre article', 'Lien', 'Année publication', 'Journal', 'Rang', 'Nb de sujet', 'CJP', 'Keywords', 'First Author Country', 'Last Author Country', 'Region']
+        # Columns: PMID / Title / Link / Year / Journal / Rank / Language / Sample Size / Primary Outcome / Keywords / First Author Country / Last Author Country / Region
+        headers = ['PMID', 'Titre article', 'Lien', 'Année publication', 'Journal', 'Rang', 'Langue', 'Nb de sujet', 'CJP', 'Keywords', 'First Author Country', 'Last Author Country', 'Region']
         ws.append(headers)
         for a in articles:
             # Journal classification (A+, A, B): respect chosen rank if provided
@@ -124,6 +124,19 @@ def export_excel(request):
             region_code = a.get('region', '')
             region_name = get_region_name(region_code) if region_code else 'Unknown'
             
+            # Language display name
+            lang_code = (a.get('language', '') or '').lower()
+            lang_names = {
+                'eng': 'English', 'fre': 'French', 'ger': 'German', 'spa': 'Spanish',
+                'ita': 'Italian', 'por': 'Portuguese', 'chi': 'Chinese', 'jpn': 'Japanese',
+                'kor': 'Korean', 'rus': 'Russian', 'ara': 'Arabic', 'tur': 'Turkish',
+                'pol': 'Polish', 'dut': 'Dutch', 'dan': 'Danish', 'swe': 'Swedish',
+                'nor': 'Norwegian', 'fin': 'Finnish', 'cze': 'Czech', 'hun': 'Hungarian',
+                'rum': 'Romanian', 'gre': 'Greek', 'heb': 'Hebrew', 'per': 'Persian',
+                'tha': 'Thai', 'ukr': 'Ukrainian',
+            }
+            language = lang_names.get(lang_code, lang_code.upper() if lang_code else '')
+            
             ws.append([
                 pmid,                          # PMID
                 a.get('title', ''),           # Article title
@@ -131,6 +144,7 @@ def export_excel(request):
                 a.get('year', ''),            # Publication year
                 a.get('journal', ''),         # Journal
                 quality,                       # Rank (A+, A, B)
+                language,                      # Language
                 participants,                  # Sample size
                 cjp,                          # Primary outcome (CJP)
                 keywords_str,                  # Keywords
