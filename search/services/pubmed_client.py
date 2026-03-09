@@ -268,6 +268,12 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
         title = ""
         if title_node is not None:
             title = ElementTree.tostring(title_node, encoding="unicode", method="text")
+        
+        # Fallback: use VernacularTitle for non-English articles where ArticleTitle is "[Not Available]."
+        if not title or title.strip().lower() in ("[not available].", "[not available]"):
+            vernacular_node = article_node.find("VernacularTitle")
+            if vernacular_node is not None:
+                title = ElementTree.tostring(vernacular_node, encoding="unicode", method="text")
 
         abstract_texts = article_node.findall("Abstract/AbstractText")
         abstract = "\n".join(
