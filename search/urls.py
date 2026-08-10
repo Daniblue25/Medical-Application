@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from .views.search import search_api, sample_api, export_all_results, batch_search_api
-from .views.export import export_excel, export_pdf
+from .views.export import export_excel, export_pdf, export_ris
 from .views.cache import clear_cache, cache_status
 
 urlpatterns = [
@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/export-all/', export_all_results, name='export-all-results'),
     path('export/excel/', export_excel, name='export-excel'),
     path('export/pdf/', export_pdf, name='export-pdf'),
+    path('export/ris/', export_ris, name='export-ris'),
     path('api/cache/clear/', clear_cache, name='cache-clear'),
     path('api/cache/status/', cache_status, name='cache-status'),
 ]

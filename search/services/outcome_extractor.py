@@ -257,6 +257,61 @@ class OutcomeExtractor:
         (re.compile(r"efficacité\s*:\s*(.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         (re.compile(r"((?:l')?efficacité\s+(?:était|est|a\s+été)\s+(?:évaluée|mesurée|analysée).{10,150}?)(?:\.|$)", re.IGNORECASE), 'low'),
         
+        # ===== HIGH: Systematic Review / Meta-analysis Patterns =====
+        
+        # Pooled estimate patterns
+        (re.compile(r"((?:the\s+)?pooled\s+(?:odds\s+ratio|risk\s+ratio|hazard\s+ratio|rate\s+ratio|prevalence|incidence|mean\s+difference|standardized\s+mean\s+difference|effect\s+size|relative\s+risk)\s+(?:was|were)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?pooled\s+(?:estimate|analysis|result)\s+(?:showed|demonstrated|revealed|indicated)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?pooled\s+(?:estimate|effect)\s+(?:was|were)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:overall|summary|combined)\s+(?:effect|estimate|risk|odds|hazard)\s+(?:size\s+|ratio\s+)?(?:was|were|showed)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Meta-analysis verb patterns
+        (re.compile(r"((?:the\s+|our\s+)?meta-?analysis\s+(?:showed|demonstrated|revealed|indicated|confirmed|found)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(meta-?analysis\s+of\s+[^.]{5,60}\s+(?:showed|demonstrated|revealed|indicated)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:random|fixed)[- ]effects?\s+(?:model\s+)?(?:meta-?analysis\s+)?(?:showed|demonstrated|yielded)\s+(?:that\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:random|fixed)[- ]effects?\s+(?:model\s+)?(?:estimate|analysis)\s+(?:was|were)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # French — Systematic Review / Meta-analysis
+        (re.compile(r"((?:la\s+)?méta-?analyse\s+(?:a\s+)?(?:montré|démontré|révélé|confirmé|indiqué)\s+(?:que\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:l')?estimation\s+(?:poolée|combinée|globale)\s+(?:était|est)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:l')?(?:odds|hazard|risk)\s+ratio\s+(?:poolé|combiné|global)\s+(?:était|est)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # ===== MEDIUM: SR/MA Supporting Patterns =====
+        
+        # Heterogeneity
+        (re.compile(r"((?:substantial|significant|moderate|low|no|considerable|high)\s+heterogeneity\s+(?:was\s+(?:observed|found|detected|present))?[^.]{0,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(I²?\s*(?:=|was)\s*\d+(?:\.\d+)?\s*%[^.]{0,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # Quality of evidence / GRADE
+        (re.compile(r"((?:the\s+)?(?:quality|certainty|level)\s+of\s+(?:the\s+)?evidence\s+(?:was|ranged|varied)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:the\s+)?GRADE\s+(?:assessment|evaluation|certainty)\s+(?:was|showed|indicated)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # Study inclusion
+        (re.compile(r"((\d+)\s+(?:studies|trials|articles)\s+(?:involving|including|comprising|with)\s+(\d[\d,]*)\s+(?:participants?|patients?|subjects?)\s+(?:were|met)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((\d+)\s+(?:studies|trials|articles)\s+(?:met\s+(?:the\s+)?(?:inclusion|eligibility)\s+criteria|were\s+(?:included|eligible|selected)).{0,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # Subgroup / Sensitivity analysis
+        (re.compile(r"((?:subgroup|sensitivity|stratified)\s+analysis\s+(?:showed|demonstrated|revealed|confirmed|indicated)\s+(?:that\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:subgroup|sensitivity)\s+(?:analyses|analysis)\s+(?:were|was)\s+(?:consistent|robust|similar).{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # Publication bias
+        (re.compile(r"((?:no\s+|significant\s+)?(?:evidence\s+of\s+)?publication\s+bias\s+(?:was|were)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # Risk of bias
+        (re.compile(r"((?:the\s+)?(?:overall\s+)?risk\s+of\s+bias\s+(?:was|ranged)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:the\s+)?(?:methodological\s+)?quality\s+of\s+(?:the\s+)?(?:included\s+)?studies\s+(?:was|ranged|varied)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # Systematic review findings
+        (re.compile(r"((?:this\s+)?systematic\s+review\s+(?:showed|found|demonstrated|revealed|identified|confirmed)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # French — SR MEDIUM
+        (re.compile(r"((?:l')?hétérogénéité\s+(?:était|est)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:la\s+)?qualité\s+des\s+preuves\s+(?:était|est|variait)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:la\s+)?(?:synthèse|revue)\s+(?:narrative|qualitative|systématique)\s+(?:a\s+)?(?:montré|révélé|identifié)\s+(?:que\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:l')?analyse\s+(?:en\s+)?sous-?groupes?\s+(?:a\s+)?(?:montré|confirmé|révélé)\s+(?:que\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:l')?analyse\s+de\s+sensibilité\s+(?:a\s+)?(?:montré|confirmé|révélé)\s+(?:que\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:le\s+)?risque\s+de\s+biais\s+(?:était|a\s+été\s+évalué)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
         # ===== LOW: Vague mentions =====
         (re.compile(r"((?:efficacy|effectiveness)\s+was\s+(?:assessed|evaluated|measured).{10,150}?)(?:\.|$)", re.IGNORECASE), 'low'),
 
@@ -333,6 +388,67 @@ class OutcomeExtractor:
         (re.compile(r"((?:il\s+(?:existe|y\s+a(?:vait)?)\s+)?(?:une\s+)?différence\s+significative[^.]*\d+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
         (re.compile(r"((?:une\s+)?(?:amélioration|réduction|diminution|augmentation)\s+significative[^.]*\d+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
         (re.compile(r"((?:la\s+)?durée\s+(?:médiane\s+)?(?:de\s+)?(?:survie|suivi|hospitalisation)\s+(?:était|a\s+été)\s+.{10,200}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # ===== HIGH: Observational Study Finding Patterns =====
+        # (Cohort, case-control, cross-sectional, registry — key findings)
+        
+        # Main/Key/Principal finding
+        (re.compile(r"((?:the\s+)?main\s+finding\s+(?:of\s+(?:this|our|the)\s+(?:study|analysis)\s+)?(?:was|is)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:key|principal|central|major)\s+finding\s+(?:of\s+(?:this|our)\s+study\s+)?(?:was|is)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:our\s+)?(?:main|key|principal)\s+findings?\s+(?:was|were|is)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?most\s+important\s+finding\s+(?:was|is)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:novel|notable|remarkable|striking)\s+finding\s+(?:was|is)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Incidence / Prevalence / Rate
+        (re.compile(r"((?:the\s+)?(?:overall\s+)?incidence\s+(?:of\s+[^.]{5,60}\s+)?(?:was|is)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:overall\s+)?prevalence\s+(?:of\s+[^.]{5,60}\s+)?(?:was|is)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?cumulative\s+incidence\s+(?:of\s+[^.]{5,60}\s+)?(?:was|is)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?incidence\s+rate\s+(?:of\s+[^.]{5,60}\s+)?(?:was|is)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:30-?day|60-?day|90-?day|1-?year|5-?year|10-?year|in-?hospital)\s+(?:mortality|morbidity|readmission|complication)\s+(?:rate\s+)?(?:was|were)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:crude|adjusted|overall)\s+(?:mortality|morbidity|complication)\s+rate\s+(?:was|were)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Association / Risk factor
+        (re.compile(r"(.{10,200}?(?:was|were)\s+independently\s+associated\s+with\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(.{10,200}?(?:was|were)\s+significantly\s+associated\s+with\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(.{10,200}?(?:was|were)\s+(?:positively|negatively|inversely)\s+associated\s+with\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:independent\s+)?(?:predictors?|risk\s+factors?)\s+(?:of|for)\s+[^.]{5,60}\s+(?:were|was|included)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?(?:adjusted|unadjusted)\s+(?:odds|hazard|risk|rate|prevalence)\s+ratio\s+(?:was|were|for)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:after|on)\s+(?:multivariable|multivariate|adjusted)\s+(?:analysis|regression)[^.]{0,30},?\s+.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:logistic|Cox|linear|Poisson)\s+regression\s+(?:analysis\s+)?(?:showed|demonstrated|revealed|identified)\s+(?:that\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Survival analysis (observational)
+        (re.compile(r"((?:the\s+)?(?:5-?year|10-?year|overall|actuarial)\s+(?:survival|mortality)\s+(?:rate\s+)?(?:was|were)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(Kaplan-?Meier\s+(?:analysis|estimate|survival)\s+(?:showed|demonstrated|revealed)\s+(?:that\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:the\s+)?median\s+(?:follow-?up|survival)\s+(?:time\s+)?(?:was|were)\s+.{10,250}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Outcome/variable of interest
+        (re.compile(r"((?:the\s+)?(?:outcome|variable)\s+of\s+interest\s+(?:was|were|is)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # Comparison patterns in observational studies
+        (re.compile(r"((?:patients?|subjects?)\s+(?:with|in\s+the)\s+[^.]{5,60}\s+(?:had|showed|demonstrated)\s+(?:significantly\s+)?(?:higher|lower|greater|reduced|increased)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # French — Observational findings
+        (re.compile(r"((?:le\s+)?résultat\s+principal\s+(?:de\s+cette\s+étude\s+)?(?:était|est|a\s+été)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:la\s+)?constatation\s+principale\s+(?:était|est)\s+(?:que\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:l')?incidence\s+(?:de\s+[^.]{5,60}\s+)?(?:était|est)\s+(?:de\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:la\s+)?prévalence\s+(?:de\s+[^.]{5,60}\s+)?(?:était|est)\s+(?:de\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"(.{10,200}?(?:était|étaient)\s+(?:indépendamment|significativement)\s+associée?s?\s+à\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:les?\s+)?(?:facteurs?\s+de\s+risque|prédicteurs?)\s+(?:indépendants?\s+)?(?:de|pour)\s+[^.]{5,60}\s+(?:étaient|incluaient|comprenaient)\s+.{10,300}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:le\s+)?taux\s+(?:de\s+)?(?:mortalité|morbidité|complication|réadmission|récidive)\s+(?:à\s+\d+\s+jours?\s+)?(?:était|a\s+été)\s+(?:de\s+)?.{10,250}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        (re.compile(r"((?:l')?analyse\s+(?:multivariée|en\s+régression)\s+(?:a\s+)?(?:montré|identifié|révélé)\s+(?:que\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'high'),
+        
+        # ===== MEDIUM: Observational Study Patterns =====
+        # Aim/Objective (captures what the study measured)
+        (re.compile(r"((?:the\s+)?(?:aim|objective|purpose|goal)\s+of\s+(?:this|our|the)\s+(?:study|analysis|investigation)\s+(?:was|is)\s+to\s+.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:this|our)\s+study\s+aimed\s+to\s+.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(we\s+aimed\s+to\s+(?:assess|evaluate|determine|investigate|examine|analyze|compare|estimate|identify|explore)\s+.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(we\s+(?:evaluated|assessed|investigated|examined|analyzed)\s+(?:the\s+)?(?:association|relationship|correlation|impact|effect)\s+(?:between|of)\s+.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:a\s+)?significant\s+(?:association|correlation|relationship)\s+(?:was\s+)?(?:found|observed|identified)\s+(?:between\s+)?.{10,300}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        
+        # French — Observational MEDIUM
+        (re.compile(r"((?:l')?objectif\s+(?:de\s+cette\s+étude\s+)?(?:était|est)\s+(?:d'(?:évaluer|analyser|déterminer|estimer|identifier|comparer))\s+.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"((?:cette\s+étude|notre\s+étude)\s+(?:avait|a)\s+pour\s+(?:objectif|but)\s+(?:d[e']\s+)?.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
+        (re.compile(r"(nous\s+avons\s+(?:évalué|analysé|examiné|étudié)\s+(?:l')?(?:association|relation|corrélation|impact)\s+(?:entre|de)\s+.{10,400}?)(?:\.|$)", re.IGNORECASE), 'medium'),
         
         # ===== LOW: Generic/vague results mentions =====
         (re.compile(r"(similar\s+results?\s+(?:were|was)\s+(?:obtained|observed|found).{10,150}?)(?:\.|$)", re.IGNORECASE), 'low'),

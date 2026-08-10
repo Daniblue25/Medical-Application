@@ -13,15 +13,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Medical Search Platform v3.2</title>
     {% load static %}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="{% static 'vendor/tailwind.js' %}"></script>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
 <div class="flex h-screen overflow-hidden">
     <div class="sidebar bg-blue-900 text-white w-64 flex-shrink-0 transform -translate-x-full md:translate-x-0 fixed h-full z-40">
         <div class="p-4 flex items-center space-x-2 border-b border-blue-800">
-            <button id="appTitle" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.2</button>
+            <button id="appTitle" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedLitSearch v3.2</button>
         </div>
         <nav class="p-4">
             <div class="mb-6">
@@ -36,7 +39,7 @@
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-800">
             <div class="flex items-center space-x-3">
                 <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center"><i class="fas fa-user text-sm"></i></div>
-                <div><p class="text-sm font-medium">MedSearch v3.2</p><p class="text-xs text-blue-300">Medical & Surgical Research</p></div>
+                <div><p class="text-sm font-medium">MedLitSearch v3.2</p><p class="text-xs text-blue-300">Medical & Clinical Research</p></div>
             </div>
         </div>
     </div>
@@ -46,7 +49,7 @@
     <div class="flex-1 overflow-auto bg-gray-50 md:pl-64">
         <header class="bg-white shadow-sm">
             <div class="px-4 py-3 flex justify-between items-center">
-                <div><h1 class="text-xl font-bold text-gray-800 flex items-center"><i class="fas fa-heartbeat text-blue-600 mr-2"></i>Medical Literature Search</h1><p class="text-sm text-gray-500">Advanced PubMed analysis platform</p></div>
+                <div><h1 class="text-xl font-bold text-gray-800 flex items-center"><i class="fas fa-heartbeat text-blue-600 mr-2"></i>Medical Literature Search</h1><p class="text-sm text-gray-500"> Advanced PubMed analysis platform</p></div>
                 <div></div>
             </div>
         </header>
@@ -127,9 +130,10 @@
                     </div>
                     <!-- Hidden Page Size (used by JS internally) -->
                     <select id="pageSize" class="hidden"><option value="200" selected>200</option></select>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Max Results</label><select id="maxResults" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="20000">20 000 articles</option><option value="50000">50 000 articles</option><option value="100000" selected>100 000 articles</option><option value="200000">200 000 articles</option></select></div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-1">Region Filter</label><select id="regionFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">Global (No Filter)</option><option value="north_america">North America</option><option value="europe">Europe</option><option value="asia">Asia</option><option value="africa">Africa</option><option value="south_america">South America</option><option value="oceania">Oceania</option></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Study Center</label><select id="multicenterFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><option value="">None</option><option value="multi">Multicentric</option><option value="mono">Monocentric</option></select></div>
                     </div>
                     <div class="flex justify-between items-center pt-2">
                         <div class="flex items-center gap-3">
@@ -141,22 +145,21 @@
                 </form>
             </div>
             <div id="welcomeMessage" class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-100 p-8 text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4 text-3xl">
-                    <i class="fas fa-heartbeat text-blue-500"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to MedSearch v3.2</h2>
-                <p class="text-gray-600 mb-2">Medical & Surgical Literature Search Platform — Surgery + Nursing</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to MedLitSearch v3.2</h2>
+                <p class="text-gray-600 mb-2">Medical & Surgical Literature Search Platform — Surgery + Nursing + All</p>
                 <p class="text-sm text-gray-500 max-w-2xl mx-auto mb-4">
-                    Search across <strong>13 top-tier surgical journals</strong> (NEJM, Lancet, JAMA, BJS…) 
-                    and <strong>144 nursing journals</strong> with unified geographic detection based on last author affiliation. 
-                    Smart caching, batch search, and formatted Excel export included.
+                    In <strong>Surgery</strong>, search is focused on <strong>13 high-impact-factor journals</strong> selected by researchers
+                    (including NEJM, Lancet, JAMA, BJS). In <strong>Nursing</strong>, it covers <strong>144 nursing journals</strong>.
+                    The <strong>ALL</strong> category includes <strong>all PubMed journals</strong>. Results use unified geographic detection
+                    based on last author affiliation, with smart cache, batch search, and the new <strong>Excel + RIS export</strong>.
                 </p>
                 <div class="flex flex-wrap justify-center gap-2 mb-4">
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-star text-yellow-500 mr-1"></i> 13 Surgical + 144 Nursing Journals</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-star text-yellow-500 mr-1"></i> 13 High-Impact Surgery + 144 Nursing Journals</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-layer-group text-slate-500 mr-1"></i> ALL Category = Full PubMed Journals</span>
                     <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-globe-americas text-green-500 mr-1"></i> Uniform Region Detection</span>
                     <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-database text-blue-500 mr-1"></i> Smart Cache (7 days)</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-file-excel text-green-600 mr-1"></i> Formatted Excel Export</span>
-                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-bolt text-purple-500 mr-1"></i> Batch Search (up to 10)</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-file-export text-emerald-600 mr-1"></i> New Export: Excel + RIS (Zotero/Mendeley/EndNote)</span>
+                    <span class="px-3 py-1 bg-white rounded-full text-sm text-gray-600 border border-gray-200"><i class="fas fa-bolt text-purple-500 mr-1"></i> Batch Search </span>
                 </div>
                 <p class="text-xs text-gray-400">
                     © 2025-2026 DRCI - CHU Clermont-Ferrand. All rights reserved.
@@ -192,6 +195,9 @@
                             <span class="text-sm text-gray-500" id="resultCount">0 results</span>
                             <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center shadow-sm">
                                 <i class="fas fa-file-excel mr-2"></i> Excel
+                            </button>
+                            <button id="exportRisBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center shadow-sm" title="Export to Zotero / Mendeley / EndNote (.ris)">
+                                <i class="fas fa-book-open mr-2"></i> RIS
                             </button>
                         </div>
                     </div>
@@ -399,12 +405,25 @@
                                 No information automatically identified in this abstract.
                             </p>
                         </div>
+                        <div id="modalPartialExtraction" class="hidden mt-2">
+                            <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                                <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5 flex-shrink-0"></i>
+                                <span>
+                                    <strong>Partial extraction — non-standard abstract structure.</strong>
+                                    The regex engine found no exploitable pattern (e.g. the author may have written
+                                    <em>Primary Endpoint</em> instead of <em>Primary Outcome</em>, or the abstract is
+                                    unstructured). This is a limit of rule-based extraction, not a flaw in the study.
+                                    <a href="/about#methodology" class="underline hover:text-amber-900 ml-1" target="_blank">Learn more →</a>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div><h4 class="font-medium text-gray-800 mb-1">Study Type</h4><p class="text-gray-700" id="modalStudyType"></p></div>
                         <div><h4 class="font-medium text-gray-800 mb-1">Sample Size</h4><p class="text-gray-700" id="modalSampleSize"></p></div>
                         <div><h4 class="font-medium text-gray-800 mb-1">Evidence Level</h4><p class="text-gray-700" id="modalEvidence">N/A</p></div>
+                        <div><h4 class="font-medium text-gray-800 mb-1">Study Center</h4><p class="text-gray-700" id="modalMulticenter">—</p></div>
                         <div><h4 class="font-medium text-gray-800 mb-1">DOI</h4><p class="text-blue-600" id="modalDOI"></p></div>
                     </div>
                 </div>
@@ -420,7 +439,7 @@
 {% load static %}
 <script src="{% static 'vendor/chart.min.js' %}"></script>
 <script>
-const STORAGE_KEY = 'medSearchSavedArticles';
+const STORAGE_KEY = 'medLitSearchSavedArticles';
 const numberFormatter = new Intl.NumberFormat('en-US');
 
 // Mapping of surgery types to PubMed keywords
@@ -436,6 +455,7 @@ const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebar = document.querySelector('.sidebar');
 const elements = {
     exportBtn: document.getElementById('exportBtn'),
+    exportRisBtn: document.getElementById('exportRisBtn'),
     searchForm: document.getElementById('searchForm'),
     loadingState: document.getElementById('loadingState'),
     resultsSection: document.getElementById('resultsSection'),
@@ -815,7 +835,15 @@ function applyClientSideFilters(articles) {
         });
     }
 
-    // 2. Year Filter (interactive via chart)
+    // 2. Study Center Filter (multicenter/monocenter)
+    const multicenterFilter = document.getElementById('multicenterFilter')?.value;
+    if (multicenterFilter === 'multi') {
+        filtered = filtered.filter(article => article.is_multicenter === true);
+    } else if (multicenterFilter === 'mono') {
+        filtered = filtered.filter(article => article.is_multicenter === false);
+    }
+
+    // 3. Year Filter (interactive via chart)
     if (yearFilter) {
         filtered = filtered.filter(article => {
             return article.year == yearFilter;
@@ -886,6 +914,7 @@ function renderResults(data) {
                         ${(() => { const lang = getLanguageLabel(article.language); return lang ? `<span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 flex items-center gap-1" title="Article language: ${article.language}"><i class="fas fa-language"></i><span>${lang}</span></span>` : ''; })()}
                         <span class="saved-badge px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 hidden">Saved</span>
                         ${article.has_outcomes ? `<span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 flex items-center gap-1" title="Primary outcome automatically extracted"><i class="fas fa-bullseye"></i><span>Outcome extracted</span></span>` : ''}
+                        ${article.is_multicenter === true ? `<span class="px-3 py-1 rounded-full bg-teal-50 text-teal-700 flex items-center gap-1" title="${article.multicenter_evidence || 'Multicentric study'}${article.center_count ? ' (' + article.center_count + ' centers)' : ''}"><i class="fas fa-hospital"></i><span>Multicentric${article.center_count ? ' (' + article.center_count + ')' : ''}</span></span>` : article.is_multicenter === false ? `<span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1" title="${article.multicenter_evidence || 'Monocentric study'}"><i class="fas fa-hospital-alt"></i><span>Monocentric</span></span>` : ''}
                     </div>
                     ${article.outcome_summary ? `
                         <div class="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
@@ -1004,6 +1033,18 @@ function showArticleModal(article) {
         modalSampleEl.textContent = 'Non spécifié';
     }
     document.getElementById('modalEvidence').textContent = `Classification: Revue ${getJournalRanking(article.journal)}`;
+    // Multicenter info in modal
+    const modalMulticenterEl = document.getElementById('modalMulticenter');
+    if (modalMulticenterEl) {
+        if (article.is_multicenter === true) {
+            const centerText = article.center_count ? ` (${article.center_count} centres)` : '';
+            modalMulticenterEl.innerHTML = `<span class="px-2 py-1 rounded-full bg-teal-100 text-teal-700 text-xs font-medium"><i class="fas fa-hospital mr-1"></i>Multicentric${centerText}</span>`;
+        } else if (article.is_multicenter === false) {
+            modalMulticenterEl.innerHTML = `<span class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium"><i class="fas fa-hospital-alt mr-1"></i>Monocentric</span>`;
+        } else {
+            modalMulticenterEl.textContent = '—';
+        }
+    }
     document.getElementById('modalCountry').textContent = getRegionName(article.region);
     document.getElementById('modalInstitution').textContent = article.journal || '—';
 
@@ -1078,6 +1119,7 @@ function showArticleModal(article) {
     const primaryOutcomeText = document.getElementById('modalPrimaryOutcomeText');
     const primaryConfidenceEl = document.getElementById('modalPrimaryConfidence');
     const noOutcomesMsg = document.getElementById('modalNoOutcomes');
+    const partialExtractionMsg = document.getElementById('modalPartialExtraction');
     
     // Display adverse events
     const adverseEventsContainer = document.getElementById('modalAdverseEvents');
@@ -1158,8 +1200,17 @@ function showArticleModal(article) {
     
     if (hasAnyInfo) {
         noOutcomesMsg.classList.add('hidden');
+        if (partialExtractionMsg) partialExtractionMsg.classList.add('hidden');
     } else {
         noOutcomesMsg.classList.remove('hidden');
+        // Show the partial-extraction banner only when the abstract exists but nothing was extracted
+        if (partialExtractionMsg) {
+            if (article.abstract && article.abstract.trim().length > 50) {
+                partialExtractionMsg.classList.remove('hidden');
+            } else {
+                partialExtractionMsg.classList.add('hidden');
+            }
+        }
     }
 
     updateModalSaveState();
@@ -1904,6 +1955,26 @@ if (regionFilterElement) {
     });
 }
 
+// Multicenter filter change listener - re-filter current results without new search
+const multicenterFilterElement = document.getElementById('multicenterFilter');
+if (multicenterFilterElement) {
+    multicenterFilterElement.addEventListener('change', () => {
+        if (state.currentResults && state.currentResults.length > 0) {
+            const filteredArticles = applyClientSideFilters(state.currentResults);
+            renderResults(filteredArticles);
+            if (allArticlesForChart && allArticlesForChart.length > 0) {
+                updateCharts(applyClientSideFilters(allArticlesForChart));
+            } else {
+                updateCharts(filteredArticles);
+            }
+            const mcFilter = multicenterFilterElement.value;
+            const mcName = multicenterFilterElement.options[multicenterFilterElement.selectedIndex].text;
+            const mcInfo = mcFilter ? ` | Center filter: ${mcName} (${filteredArticles.length}/${state.currentResults.length} articles)` : '';
+            showStatus(`Results filtered${mcInfo}`, 'success');
+        }
+    });
+}
+
 elements.quickFilters.forEach(button => button.addEventListener('click', () => {
     if (button.dataset.quality) document.getElementById('journalQuality').value = button.dataset.quality;
     if (button.dataset.study) document.getElementById('studyType').value = button.dataset.study;
@@ -2056,6 +2127,70 @@ if (elements.exportBtn) {
             console.error('[Export Error]', error);
             hideExportProgress();
             showStatus('Error during export. Please try again.', 'error');
+        }
+    });
+}
+
+if (elements.exportRisBtn) {
+    elements.exportRisBtn.addEventListener('click', async () => {
+        if (!state.results.length) {
+            showStatus('No results to export yet.', 'warning');
+            return;
+        }
+        try {
+            showExportProgress();
+            updateExportProgress(10, 100, 'Fetching articles for RIS export...');
+
+            const allResultsResponse = await fetch('/api/export-all/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(state.lastSearchParams || {})
+            });
+            if (!allResultsResponse.ok) {
+                hideExportProgress();
+                throw new Error('Failed to get all results');
+            }
+            updateExportProgress(60, 100, 'Preparing RIS file...');
+
+            const allResultsData = await allResultsResponse.json();
+            const allArticles = getVisibleArticles(allResultsData.data || []);
+            const filteredArticles = applyClientSideFilters(allArticles);
+
+            if (filteredArticles.length === 0) {
+                hideExportProgress();
+                showStatus('No articles match the selected filters.', 'warning');
+                return;
+            }
+
+            updateExportProgress(80, 100, 'Generating RIS file...');
+            const exportResponse = await fetch('/export/ris/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ articles: filteredArticles })
+            });
+            if (!exportResponse.ok) {
+                hideExportProgress();
+                throw new Error('RIS export failed');
+            }
+
+            updateExportProgress(95, 100, 'Downloading RIS file...');
+            const blob = await exportResponse.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `medical_search_${filteredArticles.length}articles.ris`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            updateExportProgress(100, 100, 'RIS export completed!');
+            setTimeout(() => hideExportProgress(), 2000);
+            showStatus(`RIS export successful: ${filteredArticles.length} article(s) — ready for Zotero / Mendeley / EndNote.`, 'success');
+        } catch (error) {
+            console.error('[RIS Export Error]', error);
+            hideExportProgress();
+            showStatus('Error during RIS export. Please try again.', 'error');
         }
     });
 }

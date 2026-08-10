@@ -13,6 +13,7 @@ import json
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 import logging
+from urllib.request import urlopen
 
 import requests
 from requests import Response
@@ -22,15 +23,148 @@ from xml.etree import ElementTree
 from .participant_extractor import ParticipantExtractor
 from .outcome_extractor import OutcomeExtractor
 from .region_detector import get_region_from_affiliation, get_country_code
+from .multicenter_detector import detect_multicenter
 from .journal_config import build_journal_filter, build_nursing_journal_filter
 
 logger = logging.getLogger(__name__)
 
 
 BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-USER_AGENT = "MedSearchApp/1.0 (contact: support@example.com)"
+USER_AGENT = "MedLitSearchApp/1.0 (contact: support@example.com)"
 DEFAULT_TIMEOUT = 12
 MAX_PUBMED_LIMIT = 100000  # Maximum articles accessible via PubMed E-utilities
+
+
+def _normalize_proxy_url(proxy_value: Optional[str]) -> Optional[str]:
+    if not proxy_value:
+        return None
+
+    normalized = proxy_value.strip()
+    if not normalized:
+        return None
+
+    if "://" not in normalized:
+        normalized = f"http://{normalized}"
+
+    return normalized
+
+
+def _sanitize_proxy_for_log(proxy_value: Optional[str]) -> str:
+    if not proxy_value:
+        return "<none>"
+
+    return re.sub(r"(https?://)([^:@/]+):([^@/]+)@", r"\1***:***@", proxy_value, flags=re.IGNORECASE)
+
+
+def _extract_proxy_from_pac(pac_content: str) -> Optional[str]:
+    if not pac_content:
+        return None
+
+    matches = re.findall(r'PROXY\s+([^\s;"\']+)', pac_content, flags=re.IGNORECASE)
+    if not matches:
+        return None
+
+    return _normalize_proxy_url(matches[-1])
+
+
+def _parse_windows_proxy_server(proxy_server: str) -> Optional[str]:
+    if not proxy_server:
+        return None
+
+    proxy_server = proxy_server.strip()
+    if not proxy_server:
+        return None
+
+    if '=' not in proxy_server:
+        return _normalize_proxy_url(proxy_server)
+
+    proxy_entries = {}
+    for chunk in proxy_server.split(';'):
+        if '=' not in chunk:
+            continue
+        scheme, value = chunk.split('=', 1)
+        proxy_entries[scheme.strip().lower()] = value.strip()
+
+    return (
+        _normalize_proxy_url(proxy_entries.get('https'))
+        or _normalize_proxy_url(proxy_entries.get('http'))
+        or _normalize_proxy_url(next(iter(proxy_entries.values()), None))
+    )
+
+
+def _get_windows_proxy_url() -> Optional[str]:
+    if os.name != 'nt':
+        return None
+
+    try:
+        import winreg
+    except ImportError:
+        return None
+
+    try:
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+        ) as registry_key:
+            def read_registry_value(name: str, default: object = '') -> object:
+                try:
+                    return winreg.QueryValueEx(registry_key, name)[0]
+                except FileNotFoundError:
+                    return default
+
+            proxy_enable = bool(read_registry_value('ProxyEnable', 0))
+            proxy_server = str(read_registry_value('ProxyServer', ''))
+            auto_config_url = str(read_registry_value('AutoConfigURL', ''))
+    except OSError as exc:
+        logger.warning("Unable to read Windows proxy configuration: %s", exc)
+        return None
+
+    explicit_proxy = _parse_windows_proxy_server(proxy_server) if proxy_enable else None
+    if explicit_proxy:
+        return explicit_proxy
+
+    if not auto_config_url:
+        return None
+
+    try:
+        with urlopen(auto_config_url, timeout=5) as response:
+            pac_content = response.read().decode('utf-8', errors='ignore')
+    except OSError as exc:
+        logger.warning("Unable to load PAC file from %s: %s", auto_config_url, exc)
+        return None
+
+    return _extract_proxy_from_pac(pac_content)
+
+
+def _build_proxy_configuration() -> Dict[str, str]:
+    https_proxy = _normalize_proxy_url(
+        os.getenv('PUBMED_HTTPS_PROXY')
+        or os.getenv('HTTPS_PROXY')
+        or os.getenv('https_proxy')
+    )
+    http_proxy = _normalize_proxy_url(
+        os.getenv('PUBMED_HTTP_PROXY')
+        or os.getenv('HTTP_PROXY')
+        or os.getenv('http_proxy')
+    )
+
+    if https_proxy or http_proxy:
+        resolved_https_proxy = https_proxy or http_proxy
+        resolved_http_proxy = http_proxy or https_proxy
+        if resolved_https_proxy and resolved_http_proxy:
+            return {
+                'https': resolved_https_proxy,
+                'http': resolved_http_proxy,
+            }
+
+    windows_proxy = _get_windows_proxy_url()
+    if not windows_proxy:
+        return {}
+
+    return {
+        'https': windows_proxy,
+        'http': windows_proxy,
+    }
 
 # Persistent HTTP session with retry strategy
 _session = requests.Session()
@@ -42,6 +176,15 @@ _retry = Retry(
 )
 _session.mount("https://", HTTPAdapter(max_retries=_retry))
 _session.mount("http://", HTTPAdapter(max_retries=_retry))
+
+_proxy_configuration = _build_proxy_configuration()
+if _proxy_configuration:
+    _session.proxies.update(_proxy_configuration)
+    logger.info(
+        "PubMed proxy configured | https=%s | http=%s",
+        _sanitize_proxy_for_log(_proxy_configuration.get('https')),
+        _sanitize_proxy_for_log(_proxy_configuration.get('http')),
+    )
 
 # NCBI E-utilities API Configuration (chargé depuis .env)
 NCBI_API_KEY = os.getenv('NCBI_API_KEY')
@@ -365,6 +508,9 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
         # ✨ NOUVEAU : Extraction automatique des critères principaux
         outcomes = OutcomeExtractor.extract_outcomes(abstract)
         outcome_summary = OutcomeExtractor.extract_summary(abstract)
+        
+        # ✨ Détection du caractère multicentrique
+        multicenter_info = detect_multicenter(abstract, last_author_affiliation)
 
         articles.append(
             {
@@ -408,6 +554,11 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "has_outcomes": bool(outcomes.get('primary_outcome') or outcomes.get('adverse_events') 
                                     or outcomes.get('efficacy') or outcomes.get('results') or outcomes.get('safety')),
                 "outcome_summary": outcome_summary,
+                # ✨ Caractère multicentrique
+                "is_multicenter": multicenter_info.get('is_multicenter'),
+                "multicenter_confidence": multicenter_info.get('confidence'),
+                "center_count": multicenter_info.get('center_count'),
+                "multicenter_evidence": multicenter_info.get('evidence'),
             }
         )
 

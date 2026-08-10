@@ -10,7 +10,6 @@ from typing import Callable
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from django.core.cache import cache
 from django.conf import settings
-from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -237,29 +236,6 @@ class LoggingMiddleware:
         return f"{hash_value}-{int(time.time())}"
 
 
-class CSRFProtectionMiddleware:
-    """
-    CSRF token validation middleware for POST/PUT/DELETE requests
-    Ensures all state-changing operations have valid CSRF tokens
-    """
-    
-    def __init__(self, get_response: Callable):
-        self.get_response = get_response
-        
-        # Paths exempt from CSRF check (if using @csrf_exempt decorator)
-        self.exempt_methods = ['GET', 'HEAD', 'OPTIONS']
-    
-    def __call__(self, request: HttpRequest) -> HttpResponse:
-        response = self.get_response(request)
-        
-        # Ensure CSRF cookie is set for GET requests
-        if request.method == 'GET' and not request.COOKIES.get('csrftoken'):
-            # Django will set it on next POST
-            pass
-        
-        return response
-
-
 class ProxyCompatibilityMiddleware:
     """
     Middleware to handle requests from hospital networks with proxies
@@ -288,34 +264,3 @@ class ProxyCompatibilityMiddleware:
             )
         
         return self.get_response(request)
-
-
-def rate_limit_view(limit_burst: int = 4, limit_window: int = 60):
-    """
-    Decorator for view-level rate limiting
-    Usage: @rate_limit_view(limit_burst=4, limit_window=60)
-    """
-    def decorator(view_func):
-        @wraps(view_func)
-        def wrapper(request, *args, **kwargs):
-            if settings.DEBUG or not getattr(settings, 'RATELIMIT_ENABLE', True):
-                return view_func(request, *args, **kwargs)
-
-            client_ip = RateLimitMiddleware.get_client_ip(request)
-            cache_key = f'ratelimit:view:{view_func.__name__}:{client_ip}'
-            
-            count = cache.get(cache_key, 0)
-            if count >= limit_burst:
-                return JsonResponse(
-                    {
-                        'status': 'error',
-                        'message': 'Rate limit exceeded. Please try again later.'
-                    },
-                    status=429
-                )
-            
-            cache.set(cache_key, count + 1, limit_window)
-            return view_func(request, *args, **kwargs)
-        
-        return wrapper
-    return decorator

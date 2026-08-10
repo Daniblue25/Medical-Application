@@ -378,6 +378,11 @@ class ParticipantExtractor:
         if arm_result:
             results.append(arm_result)
         
+        # 4. Try fragmented size disambiguation: detect text-based summation
+        frag_result = cls._disambiguate_fragmented_sizes(abstract)
+        if frag_result:
+            results.append(frag_result)
+        
         if not results:
             return {
                 'sample_size': None,
@@ -401,6 +406,11 @@ class ParticipantExtractor:
         # In RCTs, the NLP may pick a per-arm value instead of the total.
         # If we find a clear "total enrollment" number ≈ 2× our result, use it.
         best_result = cls._prefer_enrollment_total(abstract, best_result, results)
+        
+        # ── Post-processing: prefer fragmented sum over individual fragment ──
+        # If a fragmented summation exists AND the current best is one of its parts,
+        # prefer the sum (e.g. "120 men" → use "120 men and 135 women" = 255).
+        best_result = cls._prefer_fragmented_total(best_result, results)
         
         return {
             'sample_size': best_result['sample_size'],
@@ -529,6 +539,38 @@ class ParticipantExtractor:
         return best
     
     @classmethod
+    def _prefer_fragmented_total(cls, best: dict, all_results: list) -> dict:
+        """
+        Post-processing: if a fragmented summation result exists and the current
+        best result looks like one part of that sum, prefer the sum.
+        
+        Example: best="120 men" (score 1.05) but fragmented_gender_sum="255" exists.
+        Since 120 < 255 and "120 men" is part of "120 men and 135 women", use 255.
+        """
+        best_n = best.get('sample_size')
+        if not best_n:
+            return best
+        
+        # Already a fragmented result — keep it
+        best_method = best.get('method', '')
+        if best_method.startswith('fragmented_') or best_method in ('multi_arm_sum', 'enrollment_total_override'):
+            return best
+        
+        # Find any fragmented result
+        fragmented = [r for r in all_results if r.get('method', '').startswith('fragmented_')]
+        if not fragmented:
+            return best
+        
+        # Pick the fragmented result whose total is > best_n (the sum should be bigger)
+        best_frag = max(fragmented, key=lambda r: r.get('sample_size', 0))
+        frag_n = best_frag.get('sample_size', 0)
+        
+        if frag_n > best_n:
+            return best_frag
+        
+        return best
+    
+    @classmethod
     def _extract_number_from_match(cls, match):
         """Extrait le nombre d'un match regex, gère les séparateurs de milliers (virgule, point, espace)"""
         for group_num in range(1, match.lastindex + 1 if match.lastindex else 1):
@@ -606,6 +648,173 @@ class ParticipantExtractor:
                     'method': 'multi_arm_sum',
                     'type': 'numeric'
                 }
+        
+        return None
+    
+    @classmethod
+    def _disambiguate_fragmented_sizes(cls, abstract: str) -> dict | None:
+        """
+        Detect and sum fragmented sample sizes reported in running text.
+        
+        Handles patterns NOT covered by _try_multi_arm_summation (which only
+        handles parenthetical (n=X) patterns):
+        
+        1. Gender splits: "100 men and 120 women" → 220
+        2. Center/site splits: "200 patients from center A and 150 from center B" → 350
+        3. Textual group splits: "50 patients in the intervention group and 48 in the control group" → 98
+        4. Comma-separated arms: "assigned 60 to surgery, 55 to chemotherapy, and 58 to observation" → 173
+        5. Population disambiguation: prefer largest when ITT vs PP reported
+        
+        Returns a result dict or None.
+        """
+        abstract_lower = abstract.lower()
+        
+        _NUM = r'(\d{1,3}(?:[,.\s]\d{3})*|\d{1,6})'
+        
+        # ── Pattern 1: Gender-based splits ──
+        # "100 men/males and 120 women/females"
+        # "120 female and 100 male patients"
+        gender_patterns = [
+            rf'{_NUM}\s+(?:men|males?|boys?)\s+and\s+{_NUM}\s+(?:women|females?|girls?)',
+            rf'{_NUM}\s+(?:women|females?|girls?)\s+and\s+{_NUM}\s+(?:men|males?|boys?)',
+            rf'{_NUM}\s+(?:male|female)\s+and\s+{_NUM}\s+(?:male|female)\s+(?:patients?|participants?|subjects?)',
+        ]
+        
+        for pat in gender_patterns:
+            m = re.search(pat, abstract, re.IGNORECASE)
+            if m:
+                try:
+                    n1 = int(_normalize_number_str(m.group(1)))
+                    n2 = int(_normalize_number_str(m.group(2)))
+                    total = n1 + n2
+                    if 10 <= total <= 500000:
+                        return {
+                            'sample_size': total,
+                            'confidence_score': 0.90,
+                            'matched_text': m.group().strip(),
+                            'method': 'fragmented_gender_sum',
+                            'type': 'numeric',
+                        }
+                except (ValueError, IndexError):
+                    continue
+        
+        # ── Pattern 2: Center/site-based splits ──
+        # "200 patients from hospital A and 150 from hospital B"
+        # "300 from center A, 250 from center B, and 200 from center C"
+        center_patterns = [
+            rf'{_NUM}\s+(?:patients?|participants?|subjects?)\s+from\s+[^,]+?(?:and|,)\s+{_NUM}\s+(?:patients?\s+)?from\s+',
+            rf'{_NUM}\s+from\s+(?:center|centre|site|hospital|institution)\s+\w+\s*(?:,\s*{_NUM}\s+from\s+(?:center|centre|site|hospital|institution)\s+\w+\s*)*(?:,?\s*and\s+{_NUM}\s+from\s+)',
+        ]
+        
+        for pat in center_patterns:
+            m = re.search(pat, abstract, re.IGNORECASE)
+            if m:
+                # Extract ALL numbers from the matched region
+                nums = re.findall(r'\d{1,3}(?:[,.\s]\d{3})*|\d{1,6}', m.group())
+                try:
+                    values = [int(_normalize_number_str(n)) for n in nums]
+                    values = [v for v in values if 5 <= v <= 500000]
+                    if len(values) >= 2:
+                        total = sum(values)
+                        if 10 <= total <= 1000000:
+                            return {
+                                'sample_size': total,
+                                'confidence_score': 0.78,
+                                'matched_text': m.group().strip(),
+                                'method': 'fragmented_center_sum',
+                                'type': 'numeric',
+                            }
+                except (ValueError, IndexError):
+                    continue
+        
+        # ── Pattern 3: Textual group-based splits ──
+        # "50 patients in the treatment group and 48 in the control group"
+        # "assigned 60 to group A and 55 to group B"
+        group_patterns = [
+            rf'{_NUM}\s+(?:patients?|participants?|subjects?)\s+(?:in|to)\s+(?:the\s+)?(?:\w+\s+)?(?:group|arm)\s+and\s+{_NUM}\s+(?:patients?\s+)?(?:in|to)\s+(?:the\s+)?(?:\w+\s+)?(?:group|arm)',
+            rf'assigned\s+{_NUM}\s+(?:patients?\s+)?to\s+[^,]+?(?:,\s+{_NUM}\s+(?:patients?\s+)?to\s+[^,]+?)*(?:,?\s*and\s+{_NUM}\s+(?:patients?\s+)?to\s+)',
+            rf'{_NUM}\s+(?:patients?|participants?)\s+(?:received|underwent)\s+[^,]+?\s+and\s+{_NUM}\s+(?:patients?\s+)?(?:received|underwent)\s+',
+        ]
+        
+        for pat in group_patterns:
+            m = re.search(pat, abstract, re.IGNORECASE)
+            if m:
+                nums = re.findall(r'\d{1,3}(?:[,.\s]\d{3})*|\d{1,6}', m.group())
+                try:
+                    values = [int(_normalize_number_str(n)) for n in nums]
+                    values = [v for v in values if 5 <= v <= 500000]
+                    if len(values) >= 2:
+                        total = sum(values)
+                        if 10 <= total <= 1000000:
+                            return {
+                                'sample_size': total,
+                                'confidence_score': 0.91,
+                                'matched_text': m.group().strip(),
+                                'method': 'fragmented_group_sum',
+                                'type': 'numeric',
+                            }
+                except (ValueError, IndexError):
+                    continue
+        
+        # ── Pattern 4: Comma-separated assignment ──
+        # "randomly assigned to receive drug A (n=60), drug B (n=55), or placebo (n=58)"
+        # Already handled by _try_multi_arm_summation for (n=X), but handle
+        # "assigned 60 to drug A, 55 to drug B, and 58 to placebo"
+        assignment_pat = re.search(
+            r'(?:assigned|allocated|randomized|randomised)\s+'
+            r'(\d[\d,]*)\s+(?:patients?\s+)?to\s+[^,]+?'
+            r'(?:,\s*(\d[\d,]*)\s+(?:patients?\s+)?to\s+[^,]+?)*'
+            r'(?:,?\s*and\s+(\d[\d,]*)\s+(?:patients?\s+)?to\s+)',
+            abstract, re.IGNORECASE
+        )
+        if assignment_pat:
+            nums = re.findall(r'(\d[\d,]*)\s+(?:patients?\s+)?to\s+', assignment_pat.group(), re.IGNORECASE)
+            try:
+                values = [int(_normalize_number_str(n)) for n in nums]
+                values = [v for v in values if 5 <= v <= 500000]
+                if len(values) >= 2:
+                    total = sum(values)
+                    if 10 <= total <= 1000000:
+                        return {
+                            'sample_size': total,
+                            'confidence_score': 0.92,
+                            'matched_text': assignment_pat.group().strip(),
+                            'method': 'fragmented_assignment_sum',
+                            'type': 'numeric',
+                        }
+            except (ValueError, IndexError):
+                pass
+        
+        # ── Pattern 5: Population disambiguation (ITT vs PP) ──
+        # Prefer the larger population (ITT > PP > safety > evaluable)
+        pop_patterns = [
+            (r'(?:intention[- ]to[- ]treat|ITT)\s+(?:population|analysis|set)\s*[\(:]\s*[Nn]?\s*=?\s*(\d[\d,]*)', 'itt'),
+            (r'(?:per[- ]protocol|PP)\s+(?:population|analysis|set)\s*[\(:]\s*[Nn]?\s*=?\s*(\d[\d,]*)', 'pp'),
+            (r'(?:safety|full\s+analysis)\s+(?:population|set)\s*[\(:]\s*[Nn]?\s*=?\s*(\d[\d,]*)', 'safety'),
+            (r'(?:modified\s+)?(?:intention[- ]to[- ]treat|mITT)\s*[\(:]\s*[Nn]?\s*=?\s*(\d[\d,]*)', 'mitt'),
+        ]
+        
+        populations = {}
+        for pat, label in pop_patterns:
+            m = re.search(pat, abstract, re.IGNORECASE)
+            if m:
+                try:
+                    populations[label] = int(_normalize_number_str(m.group(1)))
+                except (ValueError, IndexError):
+                    continue
+        
+        if len(populations) >= 2:
+            # Prefer ITT > mITT > safety > PP (largest intent-to-treat population)
+            priority = ['itt', 'mitt', 'safety', 'pp']
+            for p in priority:
+                if p in populations:
+                    return {
+                        'sample_size': populations[p],
+                        'confidence_score': 0.88,
+                        'matched_text': f'{p.upper()} population: {populations[p]}',
+                        'method': 'fragmented_population_disambig',
+                        'type': 'numeric',
+                    }
         
         return None
     

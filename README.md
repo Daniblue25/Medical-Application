@@ -1,4 +1,4 @@
-# Medical Search Platform v3.1
+# MedLitSearch Platform v3.1
 
 **Author:** FIANKO Kossi Jean-Jacques Daniel  
 **Copyright:** © 2025 DRCI - CHU Clermont-Ferrand. All rights reserved.  
@@ -8,7 +8,7 @@
 
 ## Overview
 
-Medical Search Platform is an advanced web application for searching and analyzing medical literature from PubMed. The platform provides intelligent filtering, batch search capabilities, caching system, and comprehensive analytics.
+MedLitSearch Platform is an advanced web application for searching and analyzing medical literature from PubMed. The platform provides intelligent filtering, batch search capabilities, caching system, and comprehensive analytics.
 
 ## Key Features
 
@@ -153,7 +153,7 @@ med_search_app/
 ## Author Information
 
 **Name:** FIANKO Kossi Jean-Jacques Daniel  
-**Project:** Medical Search Platform  
+**Project:** MedLitSearch Platform  
 **Version:** 3.1  
 **Year:** 2025
 

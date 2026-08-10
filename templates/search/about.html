@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>About - MedSearch v3.2</title>
+    <title>About - MedLitSearch v3.2</title>
     {% load static %}
     <script src="{% static 'vendor/tailwind.js' %}"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -62,7 +62,7 @@
     <!-- Sidebar -->
     <div class="sidebar bg-blue-900 text-white w-64 flex-shrink-0 transform -translate-x-full md:translate-x-0 fixed h-full z-40">
         <div class="p-4 flex items-center space-x-2 border-b border-blue-800">
-            <button onclick="window.location.href='/'" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedSearch v3.2</button>
+            <button onclick="window.location.href='/'" class="text-xl font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 rounded">MedLitSearch v3.2</button>
         </div>
         <nav class="p-4">
             <div class="mb-6">
@@ -78,12 +78,9 @@
             </div>
         </nav>
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-800">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center">
-                    <i class="fas fa-user text-sm"></i>
-                </div>
+            <div>
                 <div>
-                    <p class="text-sm font-medium">MedSearch v3.2</p>
+                    <p class="text-sm font-medium">MedLitSearch v3.2</p>
                     <p class="text-xs text-blue-300">Medical & Surgical Research</p>
                 </div>
             </div>
@@ -104,7 +101,7 @@
                 <div>
                     <h1 class="text-xl font-bold text-gray-800 flex items-center">
                         <i class="fas fa-info-circle mr-2 text-blue-600"></i>
-                        About MedSearch
+                        About MedLitSearch
                     </h1>
                     <p class="text-sm text-gray-500">Benchmark & Comparative Analysis</p>
                 </div>
@@ -119,8 +116,8 @@
                     <h2 class="text-2xl font-bold text-gray-900">Strategic Positioning</h2>
                 </div>
                 <p class="text-gray-700 leading-relaxed">
-                    <strong>MedSearch</strong> positions itself as the reference tool for <strong>high-precision medical and surgical research</strong>. 
-                    Unlike general search engines or purely AI-based solutions, MedSearch prioritizes 
+                    <strong>MedLitSearch</strong> positions itself as the reference tool for <strong>high-precision medical and surgical research</strong>. 
+                    Unlike general search engines or purely AI-based solutions, MedLitSearch prioritizes 
                     <strong>clinical reliability</strong>, <strong>source transparency</strong>, and <strong>workflow efficiency</strong> 
                     (search → selection → export). Version 3.2 extends its scope to <strong>nursing research</strong> with 144 dedicated journals, 
                     using a <strong>unified geographic detection</strong> method (last author affiliation) across all search types.
@@ -138,7 +135,7 @@
                         <thead>
                             <tr>
                                 <th class="text-left">Criteria</th>
-                                <th class="text-left"><i class="fas fa-heartbeat mr-1"></i> MedSearch v3.2</th>
+                                <th class="text-left"><i class="fas fa-heartbeat mr-1"></i> MedLitSearch v3.2</th>
                                 <th class="text-left"><i class="fas fa-book mr-1"></i> PubMed (Standard)</th>
                                 <th class="text-left"><i class="fas fa-robot mr-1"></i> Cure AI / Elicit</th>
                                 <th class="text-left"><i class="fas fa-microscope mr-1"></i> Scopus / WoS</th>
@@ -233,7 +230,7 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-2">1. PubMed (The Gold Standard)</h3>
                         <p class="text-gray-700 mb-2"><strong>Strength:</strong> Official NIH source. Total comprehensiveness (36+ million articles). Free and open-access.</p>
                         <p class="text-gray-700 mb-2"><strong>Weakness:</strong> Austere 2000s interface, no "professional" filters for surgeons, laborious export (raw CSV difficult to exploit).</p>
-                        <p class="text-gray-700"><strong class="text-blue-600"><i class="fas fa-rocket"></i> MedSearch Advantage:</strong> We use the same PubMed database but with a "Surgeon-First" interface. The "Rank A+" filter saves <strong>80% of time</strong> on manual sorting.</p>
+                        <p class="text-gray-700"><strong class="text-blue-600"><i class="fas fa-rocket"></i> MedLitSearch Advantage:</strong> We use the same PubMed database but with a "Surgeon-First" interface. The "Rank A+" filter saves <strong>80% of time</strong> on manual sorting.</p>
                     </div>
 
                     <!-- Cure AI / Elicit -->
@@ -241,7 +238,7 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-2">2. Cure AI / Elicit.org (The AI Challengers)</h3>
                         <p class="text-gray-700 mb-2"><strong>Strength:</strong> Impressive automatic summaries via GPT-4, natural language questions, modern interface.</p>
                         <p class="text-gray-700 mb-2"><strong>Weakness:</strong> Risk of <strong>hallucinations</strong> (AI can invent data), "Black Box", no massive formatted Excel export.</p>
-                        <p class="text-gray-700"><strong class="text-purple-600"><i class="fas fa-rocket"></i> MedSearch Advantage:</strong> MedSearch <strong>accelerates</strong> access to verified raw data. Formatted Excel export is <strong>unique in the world</strong> for building systematic reviews.</p>
+                        <p class="text-gray-700"><strong class="text-purple-600"><i class="fas fa-rocket"></i> MedLitSearch Advantage:</strong> MedLitSearch <strong>accelerates</strong> access to verified raw data. Formatted Excel export is <strong>unique in the world</strong> for building systematic reviews.</p>
                     </div>
 
                     <!-- Scopus / WoS -->
@@ -249,16 +246,16 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-2">3. Scopus / Web of Science (The Academics)</h3>
                         <p class="text-gray-700 mb-2"><strong>Strength:</strong> Bibliometric power (who cites whom?), multidisciplinary coverage, citation network analysis.</p>
                         <p class="text-gray-700 mb-2"><strong>Weakness:</strong> Very expensive (€5,000 - €50,000 / year), complex, not focused on clinical practice.</p>
-                        <p class="text-gray-700"><strong class="text-green-600"><i class="fas fa-rocket"></i> MedSearch Advantage:</strong> Free, lightweight, fast and focused on care and surgery. Unique batch search (10 parallel terms).</p>
+                        <p class="text-gray-700"><strong class="text-green-600"><i class="fas fa-rocket"></i> MedLitSearch Advantage:</strong> Free, lightweight, fast and focused on care and surgery. Unique batch search (10 parallel terms).</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Why MedSearch is Unique -->
+            <!-- Why MedLitSearch is Unique -->
             <section class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-100 p-8 mb-6 fade-in">
                 <div class="flex items-center mb-4">
                     <i class="fas fa-rocket text-4xl mr-3 text-blue-600"></i>
-                    <h2 class="text-2xl font-bold text-gray-900">Why MedSearch v3.2 is Unique?</h2>
+                    <h2 class="text-2xl font-bold text-gray-900">Why MedLitSearch v3.2 is Unique?</h2>
                 </div>
                 <blockquote class="border-l-4 border-blue-600 pl-4 italic text-lg text-gray-800 mb-4">
                     "The only tool in the world that combines PubMed's rigor with native surgical and nursing filters, 
@@ -266,7 +263,7 @@
                 </blockquote>
                 <p class="text-gray-700 leading-relaxed">
                     Other platforms bring generative AI to <em>summarize</em> science.<br>
-                    <strong>MedSearch v3.2</strong> brings functional intelligence to <em>structure</em> science 
+                    <strong>MedLitSearch v3.2</strong> brings functional intelligence to <em>structure</em> science 
                     and enable researchers to build their own evidence (Evidence-Based Medicine).
                 </p>
             </section>
@@ -296,7 +293,7 @@
                     <div class="bg-green-50 p-4 rounded-lg">
                         <h3 class="text-lg font-semibold text-green-900 mb-2">C. Batch Search (Parallel multi-query)</h3>
                         <p class="text-gray-700 text-sm"><strong>Problem solved:</strong> Comparing 10 terms required 10 manual searches.</p>
-                        <p class="text-gray-700 text-sm"><strong>Solution:</strong> Separate your terms with <code>;</code> or <strong>new line</strong>. MedSearch launches up to 10 parallel queries.</p>
+                        <p class="text-gray-700 text-sm"><strong>Solution:</strong> Separate your terms with <code>;</code> or <strong>new line</strong>. MedLitSearch launches up to 10 parallel queries.</p>
                         <p class="text-gray-700 text-sm"><strong>Gain:</strong> 10 queries in 8 seconds (vs 30 seconds manually).</p>
                     </div>
 
@@ -314,13 +311,137 @@
                 </div>
             </section>
 
+            <!-- Methodology -->
+            <section id="methodology" class="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-6 fade-in">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-flask text-4xl mr-3 text-blue-600"></i>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Methodology &amp; Scoring</h2>
+                        <p class="text-sm text-gray-500">How extraction confidence and quality indicators work</p>
+                    </div>
+                </div>
+
+                <!-- Confidence system -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-tachometer-alt text-blue-500"></i> Extraction Confidence Levels
+                    </h3>
+                    <p class="text-gray-600 text-sm mb-4">
+                        Every extracted field (primary outcome, sample size, multicenter status, safety data) carries a
+                        <strong>confidence level</strong> produced by the regex engine. It reflects how unambiguously the information
+                        was found in the abstract, <em>not</em> a judgment on study quality.
+                    </p>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="border border-green-200 bg-green-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-check-circle text-green-600"></i>
+                                <span class="font-semibold text-green-800">High confidence</span>
+                            </div>
+                            <p class="text-sm text-gray-700">The abstract uses an explicit, standardized phrase such as <em>"The primary outcome was…"</em>, <em>"Primary endpoint: …"</em> or <em>"Overall survival was the primary endpoint."</em> The regex matched a specific, high-specificity pattern.</p>
+                        </div>
+                        <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                                <span class="font-semibold text-yellow-800">Medium confidence</span>
+                            </div>
+                            <p class="text-sm text-gray-700">The abstract uses a colon-style labeling (<em>"Outcomes: …"</em>, <em>"Main outcome measures:"</em>) or a slightly ambiguous phrasing. The extracted text is likely correct but may need verification.</p>
+                        </div>
+                        <div class="border border-orange-200 bg-orange-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-question-circle text-orange-600"></i>
+                                <span class="font-semibold text-orange-800">Low confidence</span>
+                            </div>
+                            <p class="text-sm text-gray-700">The extraction relied on a vague contextual pattern or an unusual phrasing. The text shown may be a related sentence, not the true primary outcome. Manual verification is recommended.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample size extraction -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-users text-blue-500"></i> Sample Size Extraction
+                    </h3>
+                    <p class="text-gray-600 text-sm mb-3">
+                        The engine looks for participant counts with contextual keywords such as
+                        <em>enrolled, randomized, included, analysed</em>. Numbers near screening-only words
+                        (<em>screened, assessed for eligibility, identified</em>) are deliberately excluded to
+                        avoid confusing the CONSORT funnel count with the actual study sample.
+                    </p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th>Confidence</th>
+                                    <th>Trigger condition</th>
+                                    <th>Example phrase</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="text-green-700 font-medium">High</span></td>
+                                    <td>Strong enrollment verb near a number</td>
+                                    <td><em>"874 patients were randomized"</em></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="text-yellow-700 font-medium">Medium</span></td>
+                                    <td>Number near a weaker inclusion verb</td>
+                                    <td><em>"We included 312 participants"</em></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="text-orange-700 font-medium">Low</span></td>
+                                    <td>Fallback: largest plausible number in the abstract</td>
+                                    <td><em>"A total of 58 cases were reviewed"</em></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Non-standard abstract warning -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle text-amber-500"></i> "Partial Extraction" Warning
+                    </h3>
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-gray-700">
+                        <p class="mb-2">
+                            When a study detail panel shows the banner <strong class="text-amber-800">"Partial extraction — non-standard abstract"</strong>,
+                            it means the regex engine found no exploitable pattern in the abstract text.
+                        </p>
+                        <p class="mb-2">Common reasons:</p>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>The author used <em>Primary Endpoint</em> instead of <em>Primary Outcome</em> — or other non-standard synonyms.</li>
+                            <li>The abstract is unstructured (narrative style without labeled sections).</li>
+                            <li>The article is a review, editorial, or case report that does not describe a primary outcome.</li>
+                            <li>The abstract is in a language other than English or French.</li>
+                        </ul>
+                        <p class="mt-2 text-gray-500 text-xs">
+                            This is a limitation of rule-based extraction, not a flaw in the study.
+                            Always consult the full text on PubMed for definitive information.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Multicenter detection -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-hospital text-blue-500"></i> Multicenter Detection
+                    </h3>
+                    <p class="text-gray-600 text-sm">
+                        A study is classified as <strong>multicentric</strong> when explicit keywords are found in the abstract or title
+                        (<em>multicenter, multicentre, multi-institutional, multi-site</em>, or explicit center counts like <em>"across 12 hospitals"</em>).
+                        When the evidence is weaker (e.g., multiple affiliations without an explicit keyword), the confidence is set to <strong>medium</strong>.
+                        Absence of these markers yields a <strong>monocentric</strong> classification.
+                    </p>
+                </div>
+            </section>
+
             <!-- Footer -->
             <section class="bg-gray-800 text-white rounded-xl p-8 fade-in">
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="text-lg font-semibold mb-2"><i class="fas fa-lightbulb mr-2 text-yellow-400"></i> Good to Know</h3>
                         <p class="text-gray-300 text-sm">
-                            MedSearch v3.2 is not a competitor to PubMed or Scopus. It's a <strong>productivity amplifier</strong> 
+                            MedLitSearch v3.2 is not a competitor to PubMed or Scopus. It's a <strong>productivity amplifier</strong> 
                             for surgeon-researchers and nursing researchers.
                         </p>
                     </div>
@@ -335,7 +456,7 @@
                     </div>
                 </div>
                 <div class="mt-6 pt-6 border-t border-gray-700 text-center text-gray-400 text-sm">
-                    <p><strong>MedSearch = PubMed + Functional Intelligence</strong></p>
+                    <p><strong>MedLitSearch = PubMed + Functional Intelligence</strong></p>
                     <p class="mt-2">Last updated: February 19, 2026</p>
                     <p class="mt-1">© 2025-2026 DRCI - CHU Clermont-Ferrand. All rights reserved.</p>
                 </div>

@@ -10,58 +10,6 @@ from reportlab.lib.pagesizes import A4
 from datetime import datetime
 
 
-def get_journal_ranking(journal_name):
-    """Classifie une revue médicale selon les standards A+, A, B"""
-    if not journal_name:
-        return 'B'
-        
-    aplus_journals = [
-        'New England Journal of Medicine', 'The Lancet', 'Journal of the American Medical Association',
-        'Nature Medicine', 'Cell', 'Science', 'Nature', 'The BMJ', 'Annals of Internal Medicine',
-        'JAMA Internal Medicine', 'Circulation', 'Nature Genetics', 'The Lancet Oncology',
-        'Journal of Clinical Investigation', 'Nature Immunology', 'Blood', 'Gastroenterology',
-        'Journal of Clinical Oncology', 'The Lancet Neurology', 'Nature Cell Biology'
-    ]
-    
-    # Revues de rang A : inclut les 13 revues chirurgicales + autres revues médicales de qualité
-    a_journals = [
-        # 13 revues chirurgicales ciblées (rang A)
-        'JAMA Surgery',
-        'British Journal of Surgery',
-        'Annals of Surgery',
-        'International Journal of Surgery',
-        'Digestive Endoscopy',
-        'Liver Transplantation',
-        'Journal of the American College of Surgeons',
-        'American Journal of Transplantation',
-        'Endoscopy',
-        'Hepatobiliary Surgery and Nutrition',
-        # Autres revues médicales de rang A
-        'American Journal of Medicine', 'PLOS Medicine', 'European Heart Journal',
-        'Journal of the American College of Cardiology', 'Diabetes Care', 'Hepatology',
-        'Archives of Internal Medicine', 'Clinical Infectious Diseases', 'Kidney International',
-        'Journal of Hepatology', 'American Journal of Respiratory and Critical Care Medicine',
-        'Arthritis & Rheumatism', 'Journal of Allergy and Clinical Immunology',
-        'American Journal of Psychiatry', 'Journal of Clinical Endocrinology & Metabolism',
-        'Hypertension', 'Journal of Immunology', 'Cancer Research', 
-        'Proceedings of the National Academy of Sciences', 'European Journal of Heart Failure', 
-        'Thorax', 'Gut', 'Brain', 'Journal of Neuroscience'
-    ]
-    
-    normalized_journal = journal_name.lower().strip()
-    
-    # Vérifier A+
-    for journal in aplus_journals:
-        if normalized_journal in journal.lower() or journal.lower() in normalized_journal:
-            return 'A+'
-    
-    # Vérifier A
-    for journal in a_journals:
-        if normalized_journal in journal.lower() or journal.lower() in normalized_journal:
-            return 'A'
-    
-    return 'B'
-
 @api_view(['POST'])
 def export_excel(request):
     from search.services.region_detector import get_region_name, get_country_name
@@ -73,13 +21,10 @@ def export_excel(request):
     ws = wb.active
     if ws:
         ws.title = 'Search Results'
-        # Columns: PMID / Title / Link / Year / Journal / Rank / Language / Sample Size / Primary Outcome / Keywords / First Author Country / Last Author Country / Region
-        headers = ['PMID', 'Titre article', 'Lien', 'Année publication', 'Journal', 'Rang', 'Langue', 'Nb de sujet', 'CJP', 'Keywords', 'First Author Country', 'Last Author Country', 'Region']
+        # Columns: PMID / Title / Link / Year / Journal / Language / Sample Size / Primary Outcome / Center Type / Keywords / First Author Country / Last Author Country / Region
+        headers = ['PMID', 'Title', 'Link', 'Publication Year', 'Language', 'Journal', 'Sample Size', 'Primary Outcome', 'Center Type', 'Keywords', 'First Author Country', 'Last Author Country', 'Region']
         ws.append(headers)
         for a in articles:
-            # Journal classification (A+, A, B): respect chosen rank if provided
-            quality = a.get('journal_rank') or get_journal_ranking(a.get('journal', ''))
-            
             # Number of participants (without confidence in export)
             participants = str(a.get('sample_size', '')) if a.get('sample_size') else ''
             
@@ -143,10 +88,10 @@ def export_excel(request):
                 link,                          # Link
                 a.get('year', ''),            # Publication year
                 a.get('journal', ''),         # Journal
-                quality,                       # Rank (A+, A, B)
                 language,                      # Language
                 participants,                  # Sample size
                 cjp,                          # Primary outcome (CJP)
+                'Multicenter' if a.get('is_multicenter') is True else ('Monocenter' if a.get('is_multicenter') is False else ''),  # Center Type
                 keywords_str,                  # Keywords
                 first_author_country,          # First Author Country
                 last_author_country,           # Last Author Country
@@ -184,8 +129,7 @@ def export_pdf(request):
             meta = f"""
             <b>Authors:</b> {a.get('authors','N/A')}<br/>
             <b>Journal:</b> {a.get('journal','N/A')} ({a.get('year','')})<br/>
-            <b>Study Type:</b> {a.get('study_type','N/A')}<br/>
-            <b>Quality:</b> {a.get('quality','N/A')}
+            <b>Study Type:</b> {a.get('study_type','N/A')}
             """
             elements.append(Paragraph(meta, styles['Normal']))
             elements.append(Spacer(1, 10))
@@ -197,4 +141,73 @@ def export_pdf(request):
             os.unlink(tmp_path)
     resp = HttpResponse(pdf_data, content_type='application/pdf')
     resp['Content-Disposition'] = f"attachment; filename=medical_search_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    return resp
+
+
+@api_view(['POST'])
+def export_ris(request):
+    """
+    Export search results in RIS format (.ris) for import into
+    Zotero, Mendeley, EndNote, and other reference managers.
+    """
+    articles = request.data.get('articles', [])
+    if not articles:
+        return Response({'error': 'No data to export'}, status=400)
+
+    lines = []
+    for a in articles:
+        lines.append('TY  - JOUR')
+
+        title = (a.get('title') or '').strip()
+        if title:
+            lines.append(f'TI  - {title}')
+
+        # Authors — PubMed returns a comma-separated string
+        authors_raw = (a.get('authors') or '').strip()
+        if authors_raw:
+            for author in authors_raw.split(','):
+                author = author.strip()
+                if author:
+                    lines.append(f'AU  - {author}')
+
+        journal = (a.get('journal') or '').strip()
+        if journal:
+            lines.append(f'JO  - {journal}')
+            lines.append(f'T2  - {journal}')
+
+        year = str(a.get('year') or '').strip()
+        if year:
+            lines.append(f'PY  - {year}')
+
+        abstract = (a.get('abstract') or '').strip()
+        if abstract:
+            lines.append(f'AB  - {abstract}')
+
+        keywords = a.get('keywords')
+        if keywords:
+            kw_list = keywords if isinstance(keywords, list) else [keywords]
+            for kw in kw_list:
+                kw = str(kw).strip()
+                if kw:
+                    lines.append(f'KW  - {kw}')
+
+        doi = (a.get('doi') or '').strip()
+        if doi:
+            lines.append(f'DO  - {doi}')
+
+        pmid = (str(a.get('pmid') or '')).strip()
+        if pmid:
+            lines.append(f'UR  - https://pubmed.ncbi.nlm.nih.gov/{pmid}/')
+            lines.append(f'AN  - {pmid}')
+
+        language = (a.get('language') or '').strip()
+        if language:
+            lines.append(f'LA  - {language}')
+
+        lines.append('ER  - ')
+        lines.append('')  # blank line between records
+
+    content = '\r\n'.join(lines)
+    resp = HttpResponse(content, content_type='application/x-research-info-systems; charset=utf-8')
+    resp['Content-Disposition'] = f"attachment; filename=medical_search_{datetime.now().strftime('%Y%m%d_%H%M%S')}.ris"
     return resp

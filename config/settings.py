@@ -117,7 +117,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 if HAS_WHITENOISE:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # CompressedStaticFilesStorage compresses files but does NOT require a manifest,
+    # avoiding "Missing staticfiles manifest entry" errors in Docker/Cloud Run.
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -245,7 +247,7 @@ else:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-medsearch'
+            'LOCATION': 'unique-medlitsearch'
         }
     }
 
