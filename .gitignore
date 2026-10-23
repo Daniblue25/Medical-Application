@@ -74,11 +74,12 @@ tailwindcss.exe
 benchmarks/
 docs/
 distribution/
-search/tests/
-tests/
 build_multiplatform.py
 launcher.py
 docker/
+
+# Validation data (downloaded from Zenodo / rebuilt from PubMed, see validation/README.md)
+validation/data/
 
 # Local notes and temporary working files
 *.tmp
