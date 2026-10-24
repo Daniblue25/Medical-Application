@@ -8,6 +8,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ..services.pubmed_client import search_pubmed, PubMedError
 from ..services.cache_manager import CacheManager
+from ..services.journal_config import resolve_journal_rank
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ class BatchSearchService:
                 keywords = query.get('keywords', '').strip()
                 study_type = query.get('study_type', '')
                 journal_rank = query.get('journal_rank', 'all')
+                journal_filter, cache_rank = resolve_journal_rank(journal_rank, query.get('journal_tiers'))
                 time_period = query.get('time_period', '10')
                 year_from_input = query.get('year_from')
                 year_to_input = query.get('year_to')
@@ -84,7 +86,7 @@ class BatchSearchService:
                     cached_result = CacheManager.get_cached_results(
                         keywords=keywords,
                         surgery_type=study_type,
-                        journal_rank=journal_rank,
+                        journal_rank=cache_rank,
                         year_from=year_from,
                         year_to=year_to
                     )
@@ -95,14 +97,15 @@ class BatchSearchService:
                         logger.info(f"Batch [{idx}] Cache HIT: {keywords} - {len(articles)} articles")
                     else:
                         # Recherche PubMed
-                        journal_filter = '' if journal_rank == 'a' else 'no_filter'
                         total_count, articles = search_pubmed(
                             term=keywords,
                             start=0,
                             size=min(max_results_per_query, 200),
                             study_type=study_type,
-                            time_period=time_period,
-                            journal_filter=journal_filter
+                            time_period=time_period if not (year_from_input or year_to_input) else '',
+                            journal_filter=journal_filter,
+                            year_from=year_from_input,
+                            year_to=year_to_input
                         )
                         
                         # Sauvegarder dans le cache
@@ -111,7 +114,7 @@ class BatchSearchService:
                                 keywords=keywords,
                                 articles=articles,
                                 surgery_type=study_type,
-                                journal_rank=journal_rank,
+                                journal_rank=cache_rank,
                                 year_from=year_from,
                                 year_to=year_to
                             )
@@ -119,13 +122,6 @@ class BatchSearchService:
                         logger.info(f"Batch [{idx}] PubMed: {keywords} - {len(articles)} articles")
                 else:
                     # Recherche PubMed sans cache
-                    if journal_rank == 'a':
-                        journal_filter = ''
-                    elif journal_rank == 'nurse':
-                        journal_filter = 'nurse'
-                    else:
-                        journal_filter = 'no_filter'
-                    
                     total_count, articles = search_pubmed(
                         term=keywords,
                         start=0,

@@ -24,7 +24,11 @@ from .participant_extractor import ParticipantExtractor
 from .outcome_extractor import OutcomeExtractor
 from .region_detector import get_region_from_affiliation, get_country_code
 from .multicenter_detector import detect_multicenter
-from .journal_config import build_journal_filter, build_nursing_journal_filter
+from .journal_config import (
+    build_journal_filter, build_nursing_journal_filter,
+    build_surgery_journal_filter, get_surgery_tier,
+)
+from .impact_factor import lookup_impact_factor
 
 logger = logging.getLogger(__name__)
 
@@ -346,6 +350,8 @@ def _build_query(term: str, study_type: str = "", journal_filter: str = "") -> s
     # Add targeted journal filter
     if journal_filter == 'nurse':
         journal_query = build_nursing_journal_filter()
+    elif journal_filter.startswith('surgery:'):
+        journal_query = build_surgery_journal_filter(journal_filter.split(':', 1)[1].split('+'))
     else:
         journal_query = build_journal_filter(journal_filter)
     if journal_query:
@@ -425,6 +431,14 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
         ).strip()
 
         journal_title = article_node.findtext("Journal/Title")
+        # Journal identifiers, used to match the impact factor list and the surgery tiers
+        journal_abbrev = (medline.findtext("MedlineJournalInfo/MedlineTA") or "").strip()
+        nlm_unique_id = (medline.findtext("MedlineJournalInfo/NlmUniqueID") or "").strip()
+        issns = [i.text.strip() for i in article_node.findall("Journal/ISSN") if i.text]
+        issn_linking = medline.findtext("MedlineJournalInfo/ISSNLinking")
+        if issn_linking and issn_linking.strip() not in issns:
+            issns.append(issn_linking.strip())
+        impact = lookup_impact_factor(nlm_unique_id, issns, journal_abbrev) or {}
         pub_date_node = article_node.find("Journal/JournalIssue/PubDate")
         pubdate_dict: Dict[str, str] = {}
         if pub_date_node is not None:
@@ -500,9 +514,7 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
             if lang_node is not None and lang_node.text:
                 language = lang_node.text.strip()  # e.g. "eng", "fre", "ger", "spa"
 
-        # Extraire le nombre de participants avec Regex v2.0 (rapide)
-        # Note: LLM disponible via llm_extractor.py mais trop lent pour recherches temps réel
-        # Utiliser LLM uniquement pour exports où précision > vitesse
+        # Extraire le nombre de participants (règles déterministes)
         participant_info = ParticipantExtractor.extract_sample_size(abstract)
         
         # ✨ NOUVEAU : Extraction automatique des critères principaux
@@ -518,6 +530,12 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "title": (title or "").strip(),
                 "authors": authors,
                 "journal": journal_title or "",
+                "journal_abbrev": journal_abbrev,  # NLM title abbreviation (MedlineTA)
+                "nlm_unique_id": nlm_unique_id,
+                "issn": issns,
+                "impact_factor": impact.get('impact_factor'),  # JCR impact factor (None if unknown)
+                "impact_factor_year": impact.get('impact_factor_year'),
+                "surgery_tier": get_surgery_tier(journal_abbrev),  # 'high', 'medium' or ''
                 "year": year,
                 "quality": "",
                 "abstract": abstract,
@@ -538,7 +556,6 @@ def _parse_article_xml(xml_text: str) -> List[Dict]:
                 "keywords": keywords,  # Real Keywords from KeywordList
                 "mesh_terms": mesh_terms,
                 "citations": None,
-                "impact_factor": None,
                 "doi": doi,
                 # ✨ Critères extraits automatiquement
                 "primary_outcome": outcomes.get('primary_outcome'),

@@ -285,6 +285,123 @@ def build_nursing_journal_filter() -> str:
     return f"({' OR '.join(journal_filters)})"
 
 
+# ─── Surgery journals, grouped by impact-factor tier ──────────────────────────
+# Used by the "Surgery" option of the Journal filter. Each journal is listed by
+# its NLM title abbreviation (MedlineTA), which PubMed's [Journal] tag matches
+# exactly, followed by a display name.
+# The 13 journals above (TARGET_JOURNALS) are kept unchanged: they are the
+# configuration covered by the PubMed retrieval validation and the legacy
+# API value journalRank="a".
+SURGERY_JOURNAL_TIERS = {
+    'high': {
+        'label': 'High Impact Factor',
+        'journals': [
+            ('Ann Surg', 'Annals of Surgery'),
+            ('JAMA Surg', 'JAMA Surgery'),
+            ('Arch Surg', 'Archives of Surgery (former title of JAMA Surgery)'),
+            ('Br J Surg', 'British Journal of Surgery'),
+            ('J Am Coll Surg', 'Journal of the American College of Surgeons'),
+            ('Am J Transplant', 'American Journal of Transplantation'),
+            ('Gastroenterology', 'Gastroenterology'),
+            ('Gut', 'Gut'),
+            ('Hepatology', 'Hepatology'),
+            ('J Hepatol', 'Journal of Hepatology'),
+            ('Lancet Gastroenterol Hepatol', 'The Lancet Gastroenterology & Hepatology'),
+            ('Endoscopy', 'Endoscopy'),
+            ('Am J Gastroenterol', 'American Journal of Gastroenterology'),
+            ('Clin Gastroenterol Hepatol', 'Clinical Gastroenterology and Hepatology'),
+            ('Gastrointest Endosc', 'Gastrointestinal Endoscopy'),
+            ('Liver Cancer', 'Liver Cancer'),
+            ('N Engl J Med', 'New England Journal of Medicine'),
+            ('Lancet', 'The Lancet'),
+            ('JAMA', 'JAMA'),
+            ('BMJ', 'BMJ'),
+            ('Lancet Oncol', 'The Lancet Oncology'),
+            ('J Clin Oncol', 'Journal of Clinical Oncology'),
+            ('JAMA Oncol', 'JAMA Oncology'),
+            ('Ann Oncol', 'Annals of Oncology'),
+        ],
+    },
+    'medium': {
+        'label': 'Medium Impact Factor',
+        'journals': [
+            ('Ann Surg Oncol', 'Annals of Surgical Oncology'),
+            ('Surg Endosc', 'Surgical Endoscopy'),
+            ('Surgery', 'Surgery'),
+            ('Dis Colon Rectum', 'Diseases of the Colon & Rectum'),
+            ('Liver Transpl', 'Liver Transplantation'),
+            ('Transplantation', 'Transplantation'),
+            ('Gastric Cancer', 'Gastric Cancer'),
+            ('Int J Surg', 'International Journal of Surgery'),
+            ('HPB (Oxford)', 'HPB (Oxford)'),
+            ('Eur J Surg Oncol', 'European Journal of Surgical Oncology'),
+            ('J Hepatobiliary Pancreat Sci', 'Journal of Hepato-Biliary-Pancreatic Sciences'),
+            ('J Gastrointest Surg', 'Journal of Gastrointestinal Surgery'),
+            ('World J Surg', 'World Journal of Surgery'),
+            ('Surg Obes Relat Dis', 'Surgery for Obesity and Related Diseases'),
+            ('Obes Surg', 'Obesity Surgery'),
+            ('Colorectal Dis', 'Colorectal Disease'),
+            ('Pancreatology', 'Pancreatology'),
+            ('BJS Open', 'BJS Open'),
+        ],
+    },
+}
+
+SURGERY_TIER_ORDER = ('high', 'medium')
+
+# Former titles searched together with their successor (not counted as separate journals)
+FORMER_JOURNAL_TITLES = {'Arch Surg'}
+
+
+def normalize_surgery_tiers(tiers=None) -> list:
+    """
+    Return the valid tier codes in canonical order.
+    Accepts a list or a comma-separated string; an empty selection means all tiers.
+    """
+    if isinstance(tiers, str):
+        tiers = [t.strip() for t in tiers.split(',')]
+    selected = {str(t).strip().lower() for t in (tiers or []) if t}
+    ordered = [t for t in SURGERY_TIER_ORDER if t in selected]
+    return ordered or list(SURGERY_TIER_ORDER)
+
+
+def build_surgery_journal_filter(tiers=None) -> str:
+    """Build the PubMed journal filter (OR of [Journal] terms) for the selected surgery tiers."""
+    journal_filters = [
+        f'"{abbrev}"[Journal]'
+        for tier in normalize_surgery_tiers(tiers)
+        for abbrev, _name in SURGERY_JOURNAL_TIERS[tier]['journals']
+    ]
+    return f"({' OR '.join(journal_filters)})"
+
+
+def get_surgery_tier(journal_abbrev: str) -> str:
+    """Return 'high' or 'medium' if the NLM abbreviation belongs to a surgery tier, else ''."""
+    key = (journal_abbrev or '').strip().lower()
+    if not key:
+        return ''
+    for tier in SURGERY_TIER_ORDER:
+        if any(abbrev.lower() == key for abbrev, _name in SURGERY_JOURNAL_TIERS[tier]['journals']):
+            return tier
+    return ''
+
+
+def resolve_journal_rank(journal_rank: str = 'all', tiers=None) -> tuple:
+    """
+    Map the Journal filter sent by the interface to:
+      - the journal_filter understood by pubmed_client._build_query
+      - a short key (max 10 characters) identifying the filter in the search cache.
+    """
+    if journal_rank == 'surgery':
+        selected = normalize_surgery_tiers(tiers)
+        return 'surgery:' + '+'.join(selected), 'surg_' + ''.join(t[0] for t in selected)
+    if journal_rank == 'a':
+        return '', 'a'  # Legacy: the 13 target journals
+    if journal_rank == 'nurse':
+        return 'nurse', 'nurse'
+    return 'no_filter', 'all'
+
+
 def get_journal_display_name(journal_name: str) -> str:
     """
     Retourne le nom d'affichage canonique d'un journal.

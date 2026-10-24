@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..services.pubmed_client import search_pubmed, PubMedError
 from ..services.cache_manager import CacheManager
+from ..services.journal_config import resolve_journal_rank
 import math
 import logging
 import requests
@@ -18,10 +19,13 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+# Maximum number of results a search can page through (PubMed E-utilities limit)
+MAX_RESULTS = 100000
+
 @api_view(['POST'])
 def search_api(request):
     data = request.data or {}
-    max_input = data.get('max_results') or data.get('maxResults') or 100000
+    max_input = data.get('max_results') or data.get('maxResults') or MAX_RESULTS
     page_input = data.get('page') or data.get('pageNumber') or 1
     page_size_input = data.get('page_size') or data.get('pageSize') or max_input
     try:
@@ -29,22 +33,18 @@ def search_api(request):
     except (TypeError, ValueError):
         page_size = 200
     try:
-        max_results = max(1, min(int(max_input), 100000))
+        max_results = max(1, min(int(max_input), MAX_RESULTS))
     except (TypeError, ValueError):
-        max_results = 100000
+        max_results = MAX_RESULTS
     try:
         page = max(1, int(page_input))
     except (TypeError, ValueError):
         page = 1
 
-    # Gérer le filtre de rang de revue
-    journal_rank = data.get('journalRank', 'all')
-    if journal_rank == 'a':
-        journal_filter = ''  # Chaîne vide = filtre sur les 13 revues cibles
-    elif journal_rank == 'nurse':
-        journal_filter = 'nurse'
-    else:
-        journal_filter = 'no_filter'  # 'all' = toutes les revues PubMed
+    # Journal filter: all PubMed, surgery tiers, nursing journals (or legacy 'a')
+    journal_filter, cache_rank = resolve_journal_rank(
+        data.get('journalRank', 'all'), data.get('journalTiers')
+    )
     
     # Gérer le filtre de période - support des années personnalisées
     year_from_input = data.get('yearFrom')
@@ -68,7 +68,7 @@ def search_api(request):
         cached = CacheManager.get_cached_results(
             keywords=keyword,
             surgery_type=filters['study_type'] if isinstance(filters['study_type'], str) else ','.join(filters['study_type']),
-            journal_rank=data.get('journalRank', 'all'),
+            journal_rank=cache_rank,
             year_from=filters['year_from'],
             year_to=filters['year_to'],
         )
@@ -122,7 +122,7 @@ def search_api(request):
                     keywords=keyword,
                     new_articles=articles,
                     surgery_type=study_type_value or '',
-                    journal_rank=data.get('journalRank', 'all'),
+                    journal_rank=cache_rank,
                     year_from=filters['year_from'],
                     year_to=filters['year_to'],
                 )
@@ -164,14 +164,10 @@ def export_all_results(request):
     """
     data = request.data or {}
     
-    # Gérer le filtre de rang de revue
-    journal_rank = data.get('journalRank', 'all')
-    if journal_rank == 'a':
-        journal_filter = ''  # Chaîne vide = filtre sur les 13 revues cibles
-    elif journal_rank == 'nurse':
-        journal_filter = 'nurse'
-    else:
-        journal_filter = 'no_filter'  # 'all' = toutes les revues PubMed
+    # Journal filter: all PubMed, surgery tiers, nursing journals (or legacy 'a')
+    journal_filter, cache_rank = resolve_journal_rank(
+        data.get('journalRank', 'all'), data.get('journalTiers')
+    )
     
     # Gérer le filtre de période - support des années personnalisées
     year_from_input = data.get('yearFrom')

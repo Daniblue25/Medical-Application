@@ -119,6 +119,7 @@ class CacheManager:
                 participants=article.get('participants', ''),
                 outcomes=article.get('outcomes', ''),
                 language=article.get('language', ''),
+                payload=article,
             )
             cached_articles.append(cached_article)
         
@@ -182,6 +183,7 @@ class CacheManager:
                 participants=article.get('participants', ''),
                 outcomes=article.get('outcomes', ''),
                 language=article.get('language', ''),
+                payload=article,
             ))
         
         CachedArticle.objects.bulk_create(cached_articles, batch_size=100)

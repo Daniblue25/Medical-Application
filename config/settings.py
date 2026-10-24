@@ -91,6 +91,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'search.context_processors.cache_state',
+                'search.context_processors.journal_lists',
             ],
         },
     },

@@ -81,6 +81,10 @@ docker/
 # Validation data (downloaded from Zenodo / rebuilt from PubMed, see validation/README.md)
 validation/data/
 
+# Journal impact factors (licensed JCR values), generated with:
+#   python manage.py import_impact_factors "distribution/Rang SIGAPS 2020-2024.xlsx"
+search/data/impact_factors_*.json
+
 # Local notes and temporary working files
 *.tmp
 tmp/

@@ -3,6 +3,11 @@ from django.utils import timezone
 import hashlib
 import json
 
+# Bump when the cached article format or the meaning of a cache key changes:
+# entries written under an older version are no longer served.
+# v2: full article stored in CachedArticle.payload; surgery journal tiers.
+CACHE_SCHEMA_VERSION = 2
+
 
 class SearchCache(models.Model):
     """
@@ -28,6 +33,7 @@ class SearchCache(models.Model):
     def generate_hash(keywords, surgery_type='', journal_rank='all', year_from=None, year_to=None):
         """Génère un hash unique pour identifier une recherche."""
         params = {
+            'schema': CACHE_SCHEMA_VERSION,
             'keywords': keywords.lower().strip(),
             'surgery_type': surgery_type,
             'journal_rank': journal_rank,
@@ -69,6 +75,8 @@ class CachedArticle(models.Model):
     participants = models.TextField(blank=True)
     outcomes = models.TextField(blank=True)
     language = models.CharField(max_length=10, blank=True, default='')  # e.g. eng, fre, ger, spa
+    # Full article dictionary as returned by pubmed_client (all extracted fields)
+    payload = models.JSONField(default=dict, blank=True)
     
     # Métadonnées
     added_at = models.DateTimeField(auto_now_add=True)
@@ -81,6 +89,8 @@ class CachedArticle(models.Model):
     
     def to_dict(self):
         """Convertit l'article en dictionnaire pour l'API."""
+        if self.payload:
+            return dict(self.payload)
         return {
             'pmid': self.pmid,
             'title': self.title,

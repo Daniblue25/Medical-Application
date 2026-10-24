@@ -15,10 +15,12 @@ MedLitSearch Platform is an advanced web application for searching and analyzing
 ### Features
 - **SQLite Cache System**: 7-day cache validity for faster repeated searches
 - **Batch Search**: Search multiple keywords simultaneously (separated by `;` or newlines)
+- **Journal Filter**: All PubMed journals, Surgery (two groups: High and Medium Impact Factor) or Nurse (144 nursing journals)
+- **Impact Factor**: Journal Impact Factor (Clarivate JCR 2024) shown in the details of each result and in the Excel export
 - **Region Filtering**: Filter articles by geographic region (last author location)
 - **Real-time Analytics**: Interactive charts for publication trends
-- **Export Capabilities**: Export results to CSV format
-- **Advanced Filters**: Journal quality, study type, publication year, sample size
+- **Export Capabilities**: Export results to Excel (.xlsx) or RIS (Zotero, Mendeley, EndNote)
+- **Advanced Filters**: Article type, surgery type, publication years, region, study center
 
 ### Core Functionality
 - PubMed API integration with intelligent caching
@@ -60,12 +62,19 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-6. **Start development server**
+6. **Import the journal impact factors** (optional)
+```bash
+python manage.py import_impact_factors "distribution/Rang SIGAPS 2020-2024.xlsx"
+```
+This builds `search/data/impact_factors_2024.json` from the SIGAPS workbook (2024 values only).
+The file is not versioned (licensed JCR data). Without it, impact factors are shown as "Not available".
+
+7. **Start development server**
 ```bash
 python manage.py runserver
 ```
 
-7. **Access the application**
+8. **Access the application**
 Open your browser and navigate to: `http://127.0.0.1:8000`
 
 ## Usage
@@ -93,8 +102,8 @@ cancer immunotherapy
 - Change filter anytime to re-filter current results instantly
 
 ### Export Results
-- Click "Export to CSV" to download results
-- Includes all article metadata and filters applied
+- Click "Excel" or "RIS" to download the results (with the region, year and study-center filters applied)
+- The Excel file includes the journal impact factor, sample size, primary outcome and author countries
 
 ## Technology Stack
 

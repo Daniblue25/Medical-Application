@@ -13,6 +13,7 @@ from datetime import datetime
 @api_view(['POST'])
 def export_excel(request):
     from search.services.region_detector import get_region_name, get_country_name
+    from search.services.impact_factor import IMPACT_FACTOR_YEAR, lookup_impact_factor
     
     articles = request.data.get('articles', [])
     if not articles:
@@ -21,8 +22,9 @@ def export_excel(request):
     ws = wb.active
     if ws:
         ws.title = 'Search Results'
-        # Columns: PMID / Title / Link / Year / Journal / Language / Sample Size / Primary Outcome / Center Type / Keywords / First Author Country / Last Author Country / Region
-        headers = ['PMID', 'Title', 'Link', 'Publication Year', 'Language', 'Journal', 'Sample Size', 'Primary Outcome', 'Center Type', 'Keywords', 'First Author Country', 'Last Author Country', 'Region']
+        headers = ['PMID', 'Title', 'Link', 'Publication Year', 'Journal', f'Impact Factor ({IMPACT_FACTOR_YEAR})',
+                   'Language', 'Sample Size', 'Primary Outcome', 'Center Type', 'Keywords',
+                   'First Author Country', 'Last Author Country', 'Region']
         ws.append(headers)
         for a in articles:
             # Number of participants (without confidence in export)
@@ -34,6 +36,12 @@ def export_excel(request):
             
             # Primary outcome (CJP)
             cjp = a.get('primary_outcome', '')
+
+            # Journal impact factor (JCR, SIGAPS list); looked up again if the client did not send it
+            impact = a.get('impact_factor')
+            if impact is None:
+                found = lookup_impact_factor(a.get('nlm_unique_id', ''), a.get('issn') or [], a.get('journal_abbrev', ''))
+                impact = found['impact_factor'] if found else None
             
             # Keywords — use only `keywords`; if absent, leave empty
             keywords = a.get('keywords')
@@ -88,6 +96,7 @@ def export_excel(request):
                 link,                          # Link
                 a.get('year', ''),            # Publication year
                 a.get('journal', ''),         # Journal
+                impact if impact is not None else 'NA',  # Impact factor
                 language,                      # Language
                 participants,                  # Sample size
                 cjp,                          # Primary outcome (CJP)
