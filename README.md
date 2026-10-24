@@ -120,7 +120,6 @@ med_search_app/
 ├── config/              # Django settings and configuration
 ├── search/              # Main application
 │   ├── services/        # Business logic (PubMed client, deterministic rule-based extractors)
-│   ├── tests/           # Unit tests (pytest, offline)
 │   ├── views/           # API endpoints (search, export, cache)
 │   └── models.py        # Database models (SearchCache, CachedArticle)
 ├── templates/           # HTML templates
@@ -128,7 +127,6 @@ med_search_app/
 │       ├── search_v3.html   # Main SPA interface
 │       └── about.html       # About page with benchmark
 ├── static/              # Static files (CSS)
-├── validation/          # Benchmark scripts and PubMed retrieval tests (see validation/README.md)
 ├── manage.py            # Django management script
 ├── requirements.txt     # Python dependencies
 └── LICENSE              # MIT License
@@ -141,34 +139,21 @@ med_search_app/
 - **Batch Search**: 5 parallel workers, ~3-10 seconds for 10 queries
 - **Region Filtering**: Instant (client-side processing)
 
-## Validation & reproducibility
+## Reproducibility
 
 The extractors are deterministic (regular expressions and rules, no machine-learning
 or generative model): the same abstract always produces the same extracted value.
 
-Run the test suites:
-
-```bash
-pytest               # offline unit tests (PubMed calls are mocked or excluded)
-pytest -m network    # live PubMed retrieval tests (needs NCBI_API_KEY and NCBI_EMAIL)
-```
-
-The scripts and the exact commands that reproduce the figures of the validation
-article (N1 benchmark and N2 dual-expert annotation) are described in
-[validation/README.md](validation/README.md). The annotation data are archived on
-Zenodo: https://doi.org/10.5281/zenodo.21873453
-
 ## Documentation
 
-- **validation/README.md**: How to reproduce the validation results
 - **LICENSE**: MIT License terms and conditions
 
 ## Version History
 
 ### v3.2 (2026)
 - Article language detection; NLP extraction rules for English and French abstracts
-- Multicenter detector (experimental, not validated)
-- Unit tests and validation scripts restored in the repository (`search/tests/`, `validation/`)
+- Multicenter detector
+- Journal filter with Surgery groups (High / Medium Impact Factor) and journal impact factor (Clarivate JCR 2024)
 
 ### v3.1 (2025)
 - Added SQLite cache system (7-day validity)
